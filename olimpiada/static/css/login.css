@@ -1,0 +1,128 @@
+:root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --bg: #f1f5f9;
+    --text-main: #1e293b;
+    --text-sub: #64748b;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+
+body {
+    background-color: var(--bg);
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.auth-card {
+    background: white;
+    width: 70%;
+    max-width: 780px;
+    display: flex;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+/* Chap tomon */
+.banner-side {
+    flex: 1;
+    background: var(--primary);
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+}
+
+.banner-side h2 { font-size: 28px; margin-bottom: 10px; }
+.banner-side h2 span { color: #f59e0b; }
+.banner-side p { font-size: 14px; opacity: 0.9; margin-bottom: 30px; }
+.banner-side img { width: 100%; max-width: 220px; }
+
+/* O'ng tomon */
+.form-side {
+    flex: 1.2;
+    padding: 45px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.header h3 { font-size: 24px; color: var(--text-main); }
+.header p { font-size: 14px; color: var(--text-sub); margin-bottom: 25px; }
+
+.input-group { margin-bottom: 18px; }
+.input-group label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; }
+
+.input-wrapper { position: relative; }
+.input-wrapper i:not(.toggle-pass) {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+.input-wrapper input {
+    width: 100%;
+    padding: 12px 14px 12px 42px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+    transition: 0.2s;
+}
+
+.input-wrapper input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
+
+.toggle-pass {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    cursor: pointer; color: #94a3b8;
+}
+
+.options {
+    display: flex !important;
+    justify-content: flex-end !important; /* Elementni o'ng qirg'oqqa suradi */
+    width: 100%;
+    margin-top: 10px;
+    margin-bottom: 20px;
+}
+
+.options a { color: var(--primary); text-decoration: none; font-weight: 600; }
+
+.login-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex; justify-content: center; align-items: center; gap: 8px;
+}
+
+.login-btn:hover { background: var(--primary-hover); transform: translateY(-2px); }
+
+.social-area { text-align: center; margin-top: 25px; }
+.social-area span { font-size: 12px; color: #94a3b8; }
+.social-icons { display: flex; justify-content: center; gap: 15px; margin-top: 10px; }
+.social-icons a {
+    width: 40px; height: 40px; border: 1.5px solid #e2e8f0; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #475569; text-decoration: none; transition: 0.2s;
+}
+.social-icons a:hover { border-color: var(--primary); color: var(--primary); }
+
+.footer { text-align: center; margin-top: 25px; font-size: 14px; color: var(--text-sub); }
+.footer a { color: var(--primary); font-weight: 700; text-decoration: none; }
+
+@media (max-width: 750px) {
+    .banner-side { display: none; }
+    .auth-card { max-width: 400px; }
+}

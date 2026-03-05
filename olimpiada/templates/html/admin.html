@@ -1,0 +1,564 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | EduOlimp</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="admin-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-user-shield"></i>
+                <span>Admin Panel</span>
+            </div>
+            <nav class="admin-nav">
+                <a href="#" class="active"><i class="fas fa-tachometer-alt"></i> Umumiy nazorat</a>
+                <a href="#"><i class="fas fa-plus-circle"></i> Yangi test qo'shish</a>
+                <a href="#"><i class="fas fa-users"></i> Foydalanuvchilar</a>
+                <a href="#"><i class="fas fa-chart-bar"></i> Analitika</a>
+                <a href="#"><i class="fas fa-envelope"></i> Xabarnomalar</a>
+                <a href="#"><i class="fas fa-cogs"></i> Tizim sozlamalari</a>
+            </nav>
+        </aside>
+        <main class="admin-main">
+        <header class="top-bar">
+            <h2 id="page-title">Umumiy nazorat</h2>
+            <div class="admin-profile">
+                <span>Super Admin</span>
+                <i class="fas fa-user-circle"></i>
+            </div>
+        </header>
+
+        <div class="content-area">
+           <section id="dashboard-section" class="admin-section">
+                <h2 style="margin-bottom: 25px;"><i class="fas fa-trophy"></i> Fanlar bo'yicha kengaytirilgan tahlil</h2>
+
+                <style>
+                    .rank-1 { background: #ffd700 !important; color: #000; font-weight: bold; }
+                    .rank-2 { background: #c0c0c0 !important; color: #000; font-weight: bold; }
+                    .rank-3 { background: #cd7f32 !important; color: #fff; font-weight: bold; }
+                    .delete-btn { color: #ff4d4d; cursor: pointer; transition: 0.3s; text-decoration: none; }
+                    .delete-btn:hover { color: #b30000; transform: scale(1.2); }
+                    .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; display: inline-block; }
+                    .progress-container { width: 100px; height: 8px; background: #eee; border-radius: 10px; overflow: hidden; margin-top: 5px; }
+                    .grade-divider { background: #f8faff; padding: 10px 20px; font-weight: 800; color: #4e73df; border-left: 4px solid #4e73df; margin-top: 15px; font-size: 0.9rem; }
+
+                    /* Sahifa yuklanayotganda sakrashni oldini olish */
+                    .admin-section {
+                        display: none;
+                    }
+                </style>
+
+                {% for item in subjects_list %}
+                <div style="background: white; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); margin-bottom: 20px; overflow: hidden; border: 1px solid #eef2ff;">
+
+                    <div onclick="toggleSection('folder-{{ forloop.counter }}')" style="padding: 20px 30px; background: #f8faff; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="font-size: 1.3rem; font-weight: 800; color: #4e73df;">{{ item.subject }}</span>
+                            <span style="margin-left: 15px; color: #94a3b8;">{{ item.total }} ta ishtirokchi</span>
+                        </div>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+
+                    <div id="folder-{{ forloop.counter }}" style="display: none; padding: 0 20px 20px 20px;">
+
+                        {% regroup all_results by subject as subject_groups %}
+                        {% for sub_group in subject_groups %}
+                            {% if sub_group.grouper == item.subject %}
+
+                                {% regroup sub_group.list by grade as grade_groups %}
+                                {% for grade_group in grade_groups %}
+
+                                    <div class="grade-divider" style="display: flex; justify-content: space-between; align-items: center; background: #f8faff; padding: 10px 20px; border-left: 4px solid #4e73df; margin-top: 15px;">
+                                        <span>
+                                            <i class="fas fa-graduation-cap"></i> {{ grade_group.grouper }}-sinf natijalari
+                                        </span>
+
+                                        <a href="{% url 'export_excel' item.subject grade_group.grouper %}"
+                                           style="background: #1cc88a; color: white; padding: 6px 15px; border-radius: 6px; font-size: 0.8rem; text-decoration: none; display: flex; align-items: center; gap: 8px; font-weight: 600; box-shadow: 0 2px 4px rgba(28, 200, 138, 0.2);">
+                                            <i class="fas fa-file-excel"></i> Excel yuklab olish
+                                        </a>
+                                    </div>
+
+                                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+                                        <thead>
+                                            <tr style="text-align: left; color: #64748b; font-size: 0.85rem; border-bottom: 1px solid #eee;">
+                                                <th style="padding: 15px; width: 15%;">Reyting</th>
+                                                <th style="width: 25%;">F.I.SH</th>
+                                                <th style="width: 15%;">Sinf</th>
+                                                <th style="width: 15%;">Maktab</th>
+                                                <th style="width: 15%;">Natija (To'g'ri/Jami)</th>
+                                                <th style="width: 10%;">Ball (%)</th>
+                                                <th style="text-align: center; width: 5%;">Amal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for res in grade_group.list %}
+                                            <tr style="border-bottom: 1px solid #f1f5f9; transition: 0.2s;" onmouseover="this.style.background='#fcfdff'" onmouseout="this.style.background='transparent'">
+                                                <td style="padding: 15px;">
+                                                    <span class="status-badge {% if forloop.counter == 1 %}rank-1{% elif forloop.counter == 2 %}rank-2{% elif forloop.counter == 3 %}rank-3{% else %}background:#f1f5f9;{% endif %}">
+                                                        {{ forloop.counter }}-o'rin
+                                                    </span>
+                                                </td>
+                                                <td style="font-weight: 600;">{{ res.last_name }} {{ res.first_name }}</td>
+                                                <td><span style="color: #4e73df; font-weight: bold; background: #f0f3ff; padding: 2px 8px; border-radius: 5px;">{{ res.grade }}-sinf</span></td>
+                                                <td style="color: #64748b;">{{ res.school }}</td>
+
+                                                <td>
+                                                    <div style="font-weight: bold; color: #1e293b;">
+                                                        <span style="color: #1cc88a;">{{ res.correct_count }} ta</span>
+                                                        <span style="color: #94a3b8; font-weight: normal; font-size: 0.85rem;"> / {{ res.total_questions }} tadan</span>
+                                                    </div>
+                                                </td>
+
+                                                <td>
+                                                    <b style="font-size: 1rem; color: #16a34a;">{{ res.score_percent }}%</b>
+                                                    <div class="progress-container">
+                                                        <div style="width: {{ res.score_percent }}%; height: 100%; background: {% if res.score_percent >= 80 %}#1cc88a{% elif res.score_percent >= 50 %}#f6c23e{% else %}#e74a3b{% endif %};"></div>
+                                                    </div>
+                                                </td>
+
+                                                <td style="text-align: center;">
+                                                    <a href="{% url 'delete_test_result' res.id %}" onclick="return confirm('Haqiqatdan ham bu natijani o\'chirmoqchimisiz?')" class="delete-btn">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </section>
+
+            <script>
+            function toggleSection(id) {
+                let x = document.getElementById(id);
+                x.style.display = (x.style.display === "none") ? "block" : "none";
+            }
+            </script>
+
+            <script>
+                function toggleSection(id) {
+                    let x = document.getElementById(id);
+                    x.style.display = (x.style.display === "none") ? "block" : "none";
+                }
+            </script>
+
+            <section id="analytics-section" class="admin-section" style="display: none;">
+                <h2 style="margin-bottom: 25px;"><i class="fas fa-chart-pie"></i> Tizim Analitikasi</h2>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+
+                    <div style="background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative;">
+                        <h4 style="margin-bottom: 20px; color: #4e73df;"><i class="fas fa-chart-bar"></i> Fanlar bo'yicha o'rtacha o'zlashtirish (%)</h4>
+                        <div style="height: 300px; position: relative; width: 100%;">
+                            <canvas id="subjectChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div style="background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative;">
+                        <h4 style="margin-bottom: 20px; color: #1cc88a;"><i class="fas fa-users"></i> Sinflar kesimida ishtirokchilar</h4>
+                        <div style="height: 300px; position: relative; width: 100%;">
+                            <canvas id="gradeChart"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+            <script>
+                window.eduOlimpData = {
+                    subjectLabels: {{ subject_labels|safe }},
+                    subjectScores: {{ subject_scores|safe }},
+                    gradeLabels: {{ grade_labels|safe }},
+                    gradeCounts: {{ grade_counts|safe }}
+                };
+            </script>
+
+
+
+            <section id="test-section" class="admin-section" style="display: none;">
+                <div class="form-card">
+                    <h3><i class="fas fa-plus-circle"></i> Yangi test materiallarini yuklash</h3>
+
+                    <div class="subject-grid">
+                        <div class="subject-card" onclick="selectSubject('Matematika', this)">
+                            <i class="fas fa-calculator"></i>
+                            <span>Matematika</span>
+                        </div>
+                        <div class="subject-card" onclick="selectSubject('Fizika', this)">
+                            <i class="fas fa-atom"></i>
+                            <span>Fizika</span>
+                        </div>
+                        <div class="subject-card" onclick="selectSubject('Ona tili', this)">
+                            <i class="fas fa-book"></i>
+                            <span>Ona tili</span>
+                        </div>
+                        <div class="subject-card" onclick="selectSubject('Ingliz tili', this)">
+                            <i class="fas fa-language"></i>
+                            <span>Ingliz tili</span>
+                        </div>
+                        <div class="subject-card" onclick="selectSubject('Geografiya', this)">
+                            <i class="fas fa-globe-asia"></i>
+                            <span>Geografiya</span>
+                        </div>
+
+                        <div class="subject-card" onclick="selectSubject('Tarix', this)">
+                            <i class="fas fa-history"></i>
+                            <span>Tarix</span>
+                        </div>
+
+                        <div class="subject-card" onclick="selectSubject('Rus tili', this)">
+                            <i class="fas fa-language"></i> <span>Rus tili</span>
+                        </div>
+                    </div>
+                    <form id="test-upload-form" method="POST" action="{% url 'upload_test' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <input type="hidden" name="subject_name" id="selected-subject-input">
+
+                        <div id="class-selection-area" style="display: none; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                            <h4 id="selected-subject-title" style="margin-bottom: 20px; color: var(--primary-color);"></h4>
+
+                            <div class="class-list">
+                                <div class="class-row" data-grade="9">
+                                    <span>9-sinf uchun test:</span>
+                                    <div class="upload-controls">
+                                        <label class="upload-label">
+                                            <input type="file" name="file_9" onchange="handleFileUpload(this, 'file-name-9')" hidden>
+                                            <i class="fas fa-cloud-upload-alt"></i> Fayl tanlash
+                                        </label>
+                                        <span id="file-name-9" class="file-status">Fayl tanlanmagan</span>
+                                        <button type="button" class="delete-file-btn" onclick="removeFile('file-name-9', this)"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+
+                                <div class="class-row" data-grade="10">
+                                    <span>10-sinf uchun test:</span>
+                                    <div class="upload-controls">
+                                        <label class="upload-label">
+                                            <input type="file" name="file_10" onchange="handleFileUpload(this, 'file-name-10')" hidden>
+                                            <i class="fas fa-cloud-upload-alt"></i> Fayl tanlash
+                                        </label>
+                                        <span id="file-name-10" class="file-status">Fayl tanlanmagan</span>
+                                        <button type="button" class="delete-file-btn" onclick="removeFile('file-name-10', this)"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+
+                                <div class="class-row" data-grade="11">
+                                    <span>11-sinf uchun test:</span>
+                                    <div class="upload-controls">
+                                        <label class="upload-label">
+                                            <input type="file" name="file_11" onchange="handleFileUpload(this, 'file-name-11')" hidden>
+                                            <i class="fas fa-cloud-upload-alt"></i> Fayl tanlash
+                                        </label>
+                                        <span id="file-name-11" class="file-status">Fayl tanlanmagan</span>
+                                        <button type="button" class="delete-file-btn" onclick="removeFile('file-name-11', this)"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="save-btn" style="margin-top: 20px;">Barcha fayllarni saqlash</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+
+            <section id="user-section" class="admin-section" style="display: none;">
+                <div class="form-card">
+                    <h3><i class="fas fa-user-plus"></i> Yangi o'quvchi qo'shish</h3>
+                    <form id="user-add-form" method="POST" action="{% url 'add_student' %}">
+                        {% csrf_token %}
+                        <div class="form-grid">
+                            <input type="text" name="first_name" placeholder="Ism" required>
+                            <input type="text" name="last_name" placeholder="Familiya" required>
+                            <input type="text" name="middle_name" placeholder="Otasining ismi" required>
+                            <input type="email" name="email" placeholder="Email manzili" required>
+
+                            <select name="school" required>
+                                <option value="" disabled selected>Maktabni tanlang</option>
+                                <option value="1-maktab">1-maktab</option>
+                                <option value="2-maktab">2-maktab</option>
+                                <option value="3-maktab">3-maktab</option>
+                                <option value="4-maktab">4-maktab</option>
+                                <option value="5-maktab">5-maktab</option>
+                                <option value="6-maktab">6-maktab</option>
+                                <option value="7-maktab">7-maktab</option>
+                                <option value="8-maktab">8-maktab</option>
+                                <option value="9-maktab">9-maktab</option>
+                                <option value="10-maktab">10-maktab</option>
+                                <option value="11-maktab">11-maktab</option>
+                                <option value="12-maktab">12-maktab</option>
+                                <option value="13-maktab">13-maktab</option>
+                                <option value="14-maktab">14-maktab</option>
+                                <option value="15-maktab">15-maktab</option>
+                                <option value="16-maktab">16-maktab</option>
+                                <option value="17-maktab">17-maktab</option>
+                                <option value="18-maktab">18-maktab</option>
+                                <option value="19-maktab">19-maktab</option>
+                                <option value="20-maktab">20-maktab</option>
+                                <option value="21-maktab">21-maktab</option>
+                                <option value="22-maktab">22-maktab</option>
+                                <option value="23-maktab">23-maktab</option>
+                                <option value="24-maktab">24-maktab</option>
+                                <option value="25-maktab">25-maktab</option>
+                                <option value="26-maktab">26-maktab</option>
+                                <option value="27-maktab">27-maktab</option>
+                                <option value="28-maktab">28-maktab</option>
+                                <option value="29-maktab">29-maktab</option>
+                                <option value="30-maktab">30-maktab</option>
+                                <option value="31-maktab">31-maktab</option>
+                                <option value="32-maktab">32-maktab</option>
+                                <option value="33-maktab">33-maktab</option>
+                                <option value="34-maktab">34-maktab</option>
+                                <option value="35-maktab">35-maktab</option>
+                                <option value="36-maktab">36-maktab</option>
+                                <option value="37-maktab">37-maktab</option>
+                                <option value="38-maktab">38-maktab</option>
+                                <option value="39-maktab">39-maktab</option>
+                                <option value="40-maktab">40-maktab</option>
+                                <option value="IDUM">IDUM</option>
+                            </select>
+
+                            <select name="grade" required>
+                                <option value="" disabled selected>Sinfni tanlang</option>
+                                <option value="9">9-sinf</option>
+                                <option value="10">10-sinf</option>
+                                <option value="11">11-sinf</option>
+                            </select>
+
+                            <select name="subject" required>
+                                <option value="" disabled selected>Fanni tanlang</option>
+                                <option value="Matematika">Matematika</option>
+                                <option value="Fizika">Fizika</option>
+                                <option value="Ona-tili">Ona tili</option>
+                                <option value="Ingliz tili">Ingliz tili</option>
+                                <option value="Geografiya">Geografiya</option>
+                                <option value="Tarix">Tarix</option>
+                                <option value="Rus tili">Rus tili</option>
+                            </select>
+
+                            <input type="date" name="exam_date" title="Olimpiada kuni" required>
+                            <input type="time" name="exam_time" title="Olimpiada vaqti" required>
+                        </div>
+                        <button type="submit" class="save-btn">Tizimga qo'shish</button>
+                    </form>
+                </div>
+
+                <div style="background: white; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); margin-top: 30px; overflow: hidden; border: 1px solid #eef2ff;">
+                    <div style="padding: 20px 30px; background: #f8faff; border-bottom: 1px solid #eef2ff; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                        <h3 style="color: #4e73df; margin: 0; min-width: 200px;"><i class="fas fa-list"></i> Ro'yxatga olingan o'quvchilar</h3>
+
+                        <div style="display: flex; gap: 15px; flex-grow: 1; justify-content: flex-end; align-items: center;">
+                            <div style="position: relative; width: 300px;">
+                                <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+                                <input type="text" id="studentSearch" placeholder="Ism yoki familiya bo'yicha qidirish..."
+                                       style="width: 100%; padding: 10px 15px 10px 35px; border-radius: 10px; border: 1px solid #e2e8f0; outline: none; transition: 0.3s; font-size: 0.9rem;">
+                            </div>
+
+                            <a href="{% url 'export_students_excel' %}"
+                               style="background: #1cc88a; color: white; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; box-shadow: 0 4px 6px rgba(28, 200, 138, 0.2); transition: 0.3s;">
+                                <i class="fas fa-file-excel"></i> Ro'yxatni yuklab olish
+                            </a>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{% url 'bulk_update_students' %}">
+                        {% csrf_token %}
+                        <div style="padding: 20px; overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="text-align: left; color: #64748b; font-size: 0.85rem; border-bottom: 1px solid #eee;">
+                                        <th style="padding: 15px;">F.I.SH</th>
+                                        <th>Sinf & Maktab</th>
+                                        <th>Tanlangan Fan</th>
+                                        <th>Imtihon Sanasi</th>
+                                        <th>Vaqti</th>
+                                        <th style="text-align: center;">Amal (Holat)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for student in students_list %}
+                                    <tr style="border-bottom: 1px solid #f1f5f9; transition: 0.2s;" onmouseover="this.style.background='#fcfdff'" onmouseout="this.style.background='transparent'">
+                                        <td style="padding: 15px;">
+                                            <div style="font-weight: 600; color: #1e293b;">{{ student.last_name }} {{ student.first_name }}</div>
+                                            <div style="font-size: 0.8rem; color: #94a3b8;">{{ student.email }}</div>
+                                        </td>
+                                        <td>
+                                            <span style="color: #4e73df; font-weight: bold; background: #f0f3ff; padding: 2px 8px; border-radius: 5px; font-size: 0.85rem;">{{ student.grade }}-sinf</span>
+                                            <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">{{ student.school }}</div>
+                                        </td>
+                                        <td>
+                                            <span style="background: #e0e7ff; color: #4338ca; font-size: 0.8rem; padding: 4px 8px; border-radius: 6px;">
+                                                <i class="fas fa-book-reader"></i> {{ student.subject }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div style="font-weight: 500; color: #334155;">
+                                                <i class="far fa-calendar-alt" style="color: #6366f1;"></i> {{ student.exam_date|date:"d.m.Y" }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style="font-weight: 700; color: #1e293b; background: #f1f5f9; display: inline-block; padding: 4px 10px; border-radius: 8px;">
+                                                <i class="far fa-clock" style="color: #f59e0b;"></i> {{ student.exam_time|time:"H:i" }}
+                                            </div>
+                                        </td>
+                                        <td style="text-align: center; vertical-align: middle; padding: 15px;">
+                                            <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+                                                <label class="switch-container" style="position: relative; display: inline-block; width: 34px; height: 18px; cursor: pointer;">
+                                                    <input type="checkbox" name="active_students" value="{{ student.id }}"
+                                                           {% if student.is_active %}checked{% endif %}
+                                                           class="student-checkbox"
+                                                           style="opacity: 0; width: 0; height: 0;">
+                                                    <span class="slider-round" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: {% if student.is_active %}#1cc88a{% else %}#ccc{% endif %}; transition: .4s; border-radius: 34px;">
+                                                        <span style="position: absolute; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; {% if student.is_active %}transform: translateX(16px);{% endif %}"></span>
+                                                    </span>
+                                                </label>
+
+                                                <a href="{% url 'delete_student' student.id %}"
+                                                   onclick="return confirm('O\'quvchini o\'chirishni tasdiqlaysizmi?')"
+                                                   style="color: #e74a3b; text-decoration: none; font-size: 1.1rem;">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; padding: 30px; color: #94a3b8;">Hozircha o'quvchilar qo'shilmagan</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div style="padding: 20px 30px; display: flex; justify-content: flex-end; border-top: 1px solid #f1f5f9; background: #fafbff;">
+                            <button type="submit" style="background: #4e73df; color: white; padding: 12px 30px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(78, 115, 223, 0.2); transition: 0.3s;">
+                                <i class="fas fa-save"></i> Saqlash
+                            </button>
+                        </div>
+                    </form>
+
+                    <script>
+                        // Switch tugmasi bosilganda rangini va holatini darhol vizual o'zgartirish
+                        document.querySelectorAll('.student-checkbox').forEach(item => {
+                            item.addEventListener('change', function() {
+                                let slider = this.nextElementSibling;
+                                let circle = slider.querySelector('span');
+                                if(this.checked) {
+                                    slider.style.backgroundColor = '#1cc88a';
+                                    circle.style.transform = 'translateX(16px)';
+                                } else {
+                                    slider.style.backgroundColor = '#ccc';
+                                    circle.style.transform = 'translateX(0)';
+                                }
+                            });
+                        });
+                    </script>
+                </div>
+            </section>
+
+
+            <section id="settings-section" class="admin-section" style="display: none;">
+                <div class="settings-main-container">
+
+                    <div class="settings-card-mini">
+                        <div class="card-header-mini">
+                            <h3><i class="fas fa-vials"></i> Test Parametrlari</h3>
+                            <p>Olimpiada tartibi va vaqti</p>
+                        </div>
+                        <form id="test-config-form" method="POST" action="{% url 'update_settings' %}">
+                            {% csrf_token %}
+                            <div class="form-content">
+                                <div class="form-group-mini">
+                                    <label><i class="fas fa-list-ol"></i> Savollar soni</label>
+                                    <input type="number" name="total_questions" value="{{ settings.total_questions }}">
+                                </div>
+                                <div class="form-group-mini">
+                                    <label><i class="fas fa-clock"></i> Vaqt (daqiqa)</label>
+                                    <input type="number" name="test_duration" value="{{ settings.test_duration }}">
+                                </div>
+                                <div class="form-group-mini">
+                                    <label><i class="fas fa-redo"></i> Urinishlar soni</label>
+                                    <select name="retry_attempts">
+                                        <option value="1" {% if settings.retry_attempts == 1 %}selected{% endif %}>1 marta</option>
+                                        <option value="2" {% if settings.retry_attempts == 2 %}selected{% endif %}>2 marta</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-save-mini">
+                                <i class="fas fa-save"></i> Saqlash
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="settings-card-mini">
+                        <div style="margin: 0 20px;">
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <div class="alert alert-{{ message.tags }}" style="padding: 15px; margin-bottom: 20px; border-radius: 12px; font-weight: 500; display: flex; align-items: center; gap: 10px; background: {% if message.tags == 'success' %}#dcfce7; color: #166534; border: 1px solid #bbf7d0;{% else %}#fee2e2; color: #991b1b; border: 1px solid #fecaca;{% endif %};">
+                                        {% if message.tags == 'success' %}
+                                            <i class="fas fa-check-circle"></i>
+                                        {% else %}
+                                            <i class="fas fa-exclamation-circle"></i>
+                                        {% endif %}
+                                        {{ message }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="card-header-mini">
+                            <h3><i class="fas fa-user-shield"></i> Admin Xavfsizligi</h3>
+                            <p>Parolni yangilash bo'limi</p>
+                        </div>
+                        <form id="admin-password-form" method="POST" action="{% url 'admin_dashboard' %}">
+                            {% csrf_token %}
+                            <div class="form-content">
+                                <div class="form-group-mini">
+                                    <label>Joriy parol</label>
+                                    <input type="password" name="current_password" placeholder="********" required>
+                                </div>
+                                <div class="form-group-mini">
+                                    <label>Yangi parol</label>
+                                    <input type="password" name="new_password" placeholder="Yangi parol" required>
+                                </div>
+                                <div class="form-group-mini">
+                                    <label>Parolni tasdiqlash</label>
+                                    <input type="password" name="confirm_password" placeholder="Qayta kiriting" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-save-mini secondary">
+                                <i class="fas fa-key"></i> Prolni yangilash
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+            </section>
+
+
+        </div>
+    </main>
+    </div>
+    <script>
+        // Djangodan kelgan JSONni JS ob'ektiga aylantiramiz
+        const uploadedStatus = {{ json_status|safe }};
+        console.log("Yuklangan fayllar bazasi:", uploadedStatus); // Tekshirish uchun
+
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="{% static 'js/admin.js' %}"></script>
+
+</body>
+</html>

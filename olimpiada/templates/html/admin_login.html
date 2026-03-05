@@ -1,0 +1,69 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tizimga kirish | EduOlimp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/admin_login.css' %}">
+</head>
+<body>
+
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="logo">Edu<span>Olimp</span></div>
+            <p>Bilimlar olamiga xush kelibsiz</p>
+        </div>
+
+        <form id="registerForm" method="POST" action="{% url 'admin_login' %}">
+            {% csrf_token %}
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" name="username" placeholder="username" required>
+            </div>
+
+            <div class="input-group">
+                <label>Password</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" name="password" id="password" placeholder="••••••••" required>
+                    <i class="far fa-eye-slash toggle-pass" onclick="togglePass('password', this)"></i>
+                </div>
+            </div>
+
+            <button type="submit" class="main-btn">Tizimga kirish</button>
+        </form>
+
+        <div class="social-auth">
+            <p>Yoki davom eting</p>
+            <div class="social-btns">
+                <button class="social-btn">
+                    <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google">
+                    Google orqali
+                </button>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{% static 'js/admin_login.js' %}"></script>
+    <script>
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.tags == 'error' %}
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Username yoki parol xato!',
+                        toast: true,
+                        position: 'top',
+                        showConfirmButton: false,
+                        timerProgressBar: true,
+                        timer: 3000
+                    });
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    </script>
+</body>
+</html>

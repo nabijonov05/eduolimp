@@ -1,0 +1,25 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tasdiqlash</title>
+    <link rel="stylesheet" href="{% static 'css/verify.css' %}">
+</head>
+<body>
+    <div class="verify-container">
+        <h2>Emailni tasdiqlang</h2>
+
+        {% if messages %}
+            {% for message in messages %}
+                <p style="color: red;">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST">
+            {% csrf_token %}
+            <input type="text" name="code" maxlength="6" placeholder="000000" required>
+            <button type="submit">Tasdiqlash</button>
+        </form>
+    </div>
+</body>
+</html>

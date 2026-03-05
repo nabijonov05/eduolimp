@@ -1,0 +1,188 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduOlimp - Fan Olimpiadasi Tizimi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="container nav-content">
+            <div class="logo">
+                <i class="fas fa-graduation-cap" ></i> <span>EduOlimp</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home">Asosiy</a></li>
+                <li><a href="#rating">Reyting</a></li>
+                <li><a href="#boglanish">Bog'lanish</a></li>
+                <li><a href="/login" class="btn-login">Kirish</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="hero" id="home">
+        <div class="container hero-container">
+            <div class="hero-text">
+                <h1>Bilimingizni <br><span class="highlight">Raqamli Dunyoda</span> Sinang</h1>
+                <p>Elektron olimpiada tizimi orqali o'z iqtidoringizni namoyish eting va respublika reytingida yuqori o'rinlarni egallang.</p>
+                <div class="hero-btns">
+                    <a href="/login" class="btn-primary">Testni boshlash</a>
+                    <a href="#" class="btn-secondary">Yo'riqnoma</a>
+                </div>
+            </div>
+            <div class="hero-stats">
+                <div class="stat-card">
+                    <span id="timer-days">05</span>
+                    <p>Kun</p>
+                </div>
+                <div class="stat-card">
+                    <span id="timer-hours">12</span>
+                    <p>Soat</p>
+                </div>
+                <div class="stat-card">
+                    <span id="timer-mins">45</span>
+                    <p>Daqiqa</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="stats-bar">
+        <div class="container stats-grid">
+            <div class="stat-item">
+                <i class="fas fa-user-graduate"></i>
+                <div><h3>15,000+</h3><p>O'quvchilar</p></div>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-book-open"></i>
+                <div><h3>50+</h3><p>Fanlar</p></div>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-trophy"></i>
+                <div><h3>1,200+</h3><p>G'oliblar</p></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="rating-section" id="rating">
+        <div class="container">
+            <h2 class="section-title">Haftalik Top Ishtirokchilar</h2>
+            <div class="table-container">
+                <table class="rating-table">
+                    <thead>
+                        <tr>
+                            <th>O'rin</th>
+                            <th>Ishtirokchi</th>
+                            <th>Fan</th>
+                            <th>Natija</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="rank rank-1">1</span></td>
+                            <td>Dostonbek Ergashev</td>
+                            <td>Matematika</td>
+                            <td><strong>99 ball</strong></td>
+                        </tr>
+                        <tr>
+                            <td><span class="rank rank-2">2</span></td>
+                            <td>Lola Karimoova</td>
+                            <td>Ingliz tili</td>
+                            <td><strong>97 ball</strong></td>
+                        </tr>
+                        <tr>
+                            <td><span class="rank rank-3">3</span></td>
+                            <td>Jasur Akromov</td>
+                            <td>Fizika</td>
+                            <td><strong>95 ball</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+    <footer class="main-footer" id="boglanish" style="background: #0f172a; color: #f8fafc; padding: 70px 0 30px; margin-top: 50px; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; right: 0; width: 300px; height: 225px; background: radial-gradient(circle, rgba(37, 99, 235, 0.1) 0%, transparent 70%); z-index: 1;"></div>
+
+        <div class="container" style="position: relative; z-index: 2;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 40px; margin-bottom: 50px;">
+
+                <div>
+                    <div class="logo" style="font-size: 24px; font-weight: 700; color: white; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-graduation-cap" style="color: #3b82f6;"></i> EduOlimp
+                    </div>
+                    <p style="color: #94a3b8; line-height: 1.6; font-size: 14px;">
+                        EduOlimp — iqtidorli yoshlarni aniqlash va ularning bilimini raqamli dunyoda sinovdan o'tkazish uchun yaratilgan zamonaviy platforma.
+                    </p>
+                    <div style="display: flex; gap: 15px; margin-top: 25px;">
+                        <a href="#" style="width: 35px; height: 35px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; transition: 0.3s;" onmouseover="this.style.background='#2563eb'"><i class="fab fa-telegram-plane"></i></a>
+                        <a href="#" style="width: 35px; height: 35px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; transition: 0.3s;" onmouseover="this.style.background='#e1306c'"><i class="fab fa-instagram"></i></a>
+                        <a href="#" style="width: 35px; height: 35px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; transition: 0.3s;" onmouseover="this.style.background='#2563eb'"><i class="fab fa-facebook-f"></i></a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 style="font-size: 18px; margin-bottom: 25px; position: relative; padding-bottom: 10px;">
+                        Tezkor havolalar
+                        <span style="position: absolute; bottom: 0; left: 0; width: 40px; height: 2px; background: #3b82f6;"></span>
+                    </h4>
+                    <ul style="list-style: none; padding: 0; font-size: 14px;">
+                        <li style="margin-bottom: 12px;"><a href="#home" style="color: #94a3b8; text-decoration: none; transition: 0.3s;" onmouseover="this.style.color='white'">Asosiy sahifa</a></li>
+                        <li style="margin-bottom: 12px;"><a href="#about" style="color: #94a3b8; text-decoration: none; transition: 0.3s;" onmouseover="this.style.color='white'">Biz haqimizda</a></li>
+                        <li style="margin-bottom: 12px;"><a href="#rating" style="color: #94a3b8; text-decoration: none; transition: 0.3s;" onmouseover="this.style.color='white'">Reyting</a></li>
+                        <li style="margin-bottom: 12px;"><a href="#" style="color: #94a3b8; text-decoration: none; transition: 0.3s;" onmouseover="this.style.color='white'">Savol-javoblar</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 style="font-size: 18px; margin-bottom: 25px; position: relative; padding-bottom: 10px;">
+                        Bog'lanish
+                        <span style="position: absolute; bottom: 0; left: 0; width: 40px; height: 2px; background: #3b82f6;"></span>
+                    </h4>
+                    <div style="display: flex; flex-direction: column; gap: 15px; font-size: 14px; color: #94a3b8;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <i class="fas fa-map-marker-alt" style="color: #3b82f6;"></i>
+                            Toshkent sh., Amir Temur ko'chasi, 108-uy
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <i class="fas fa-phone-alt" style="color: #3b82f6;"></i>
+                            +998 (90) 123-45-67
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <i class="fas fa-envelope" style="color: #3b82f6;"></i>
+                            info@eduolimp.uz
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 style="font-size: 18px; margin-bottom: 25px; position: relative; padding-bottom: 10px;">
+                        Yangiliklar
+                        <span style="position: absolute; bottom: 0; left: 0; width: 40px; height: 2px; background: #3b82f6;"></span>
+                    </h4>
+                    <p style="color: #94a3b8; font-size: 13px; margin-bottom: 15px;">Eng so'nggi yangiliklardan xabardor bo'ling:</p>
+                    <form style="display: flex; gap: 5px;">
+                        <input type="email" placeholder="Email manzilingiz" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 10px 15px; border-radius: 8px; color: white; font-size: 13px; flex-grow: 1; outline: none;">
+                        <button style="background: #3b82f6; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer;"><i class="fas fa-paper-plane"></i></button>
+                    </form>
+                </div>
+            </div>
+
+            <div style="padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+                <p style="color: #64748b; font-size: 13px;">&copy; 2026 EduOlimp. Barcha huquqlar himoyalangan.</p>
+                <div style="display: flex; gap: 20px; font-size: 13px; color: #64748b;">
+                    <a href="#" style="color: inherit; text-decoration: none;">Maxfiylik siyosati</a>
+                    <a href="#" style="color: inherit; text-decoration: none;">Foydalanish shartlari</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>
