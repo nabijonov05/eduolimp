@@ -41,31 +41,52 @@ function updateActiveLink(activeElement) {
 // BO'LIMLARNI DINAMIK ALMASHTIRISH (Global scope)
 
 function loadTab(tabName) {
-    // 1. Hamma sectionlarni yashirish
-    const sections = ['home-section', 'reyting-section', 'results-section', 'settings-section'];
+    // 1. HTML-dagi barcha mavjud bo'lim ID-larini massivga yozamiz
+    const sections = ['home-section', 'my-tests', 'reyting-section', 'results-section', 'settings-section'];
+
+    // 2. Hammasini yashirish
     sections.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.style.display = 'none';
+        const el = document.getElementById(id);
+        if (el) {
+            el.style.display = 'none';
         }
     });
 
-    // 2. Tanlangan sectionni ko'rsatish
-    const activeSection = document.getElementById(tabName + '-section');
+    // 3. Tanlangan bo'limni ko'rsatish
+    // Agar tabName 'home' bo'lsa 'home-section'ni, bo'lmasa 'my-tests' yoki boshqasini qidiradi
+    let targetId = (tabName === 'home') ? 'home-section' : tabName;
+
+    // Agar siz 'my-tests'ni 'my-tests-section' deb o'zgartirgan bo'lsangiz, pastdagi qatorni tekshiring
+    const activeSection = document.getElementById(targetId) || document.getElementById(targetId + '-section');
+
     if (activeSection) {
         activeSection.style.display = 'block';
+
+        // Animatsiya (ixtiyoriy)
+        activeSection.animate([
+            { opacity: 0, transform: 'translateY(5px)' },
+            { opacity: 1, transform: 'translateY(0)' }
+        ], { duration: 200 });
+
+        // Sahifa sarlavhasini yangilash
+        const pageTitle = document.getElementById('page-title');
+        if (pageTitle) {
+            const link = document.querySelector(`[onclick*="loadTab('${tabName}')"]`);
+            if (link) pageTitle.innerText = link.innerText.trim();
+        }
     } else {
-        console.warn(`${tabName}-section topilmadi!`);
+        console.error("Xato: " + targetId + " topilmadi!");
     }
 
-    // 3. Sidebar menyusidagi 'active' klassini yangilash
-    // Onclick orqali chaqirilganda ham rang o'zgarishi uchun:
+    // 4. Sidebar 'active' klassini yangilash
+    const allLinks = document.querySelectorAll('.sidebar-nav a');
+    allLinks.forEach(l => l.classList.remove('active'));
+
     const clickedLink = document.querySelector(`[onclick*="loadTab('${tabName}')"]`);
     if (clickedLink) {
-        updateActiveLink(clickedLink);
+        clickedLink.classList.add('active');
     }
 }
-
 
 /*
 BU YERDAN BOSHLAB TESTNI ISHLASH QISMIGA JAVOB BERADIGAN FUNSIYALAR JOYLASHGAN
@@ -87,24 +108,24 @@ function getCookie(name) {
 }
 
 // 3. TESTNI BOSHLASH
-async function startTest(subject, minutes, testId) {
-    activeTestId = testId;
-    isReviewMode = false;
-    userAnswers = {};
-    currentQuestion = 1;
+function startTest(testId) {
+    if (!testId || testId === 'undefined') {
+        alert("Xatolik: Test ID topilmadi!");
+        return;
+    }
 
-    try {
-        const response = await fetch(`/get-questions/${testId}/`);
-        const data = await response.json();
-        if (data.status === 'success') {
-            allQuestions = data.questions;
-            document.getElementById('modalSubjectTitle').innerHTML = `<i class="fas fa-book"></i> ${subject}`;
-            document.getElementById('testModal').style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-            renderQuestion();
-            startTimer(minutes * 60);
-        }
-    } catch (error) { alert("Server xatosi!"); }
+    const url = `/get-questions/${testId}/`;
+    console.log("So'rov yuborilmoqda:", url);
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.questions) {
+                // Savollar keldi, endi ularni ekranda ko'rsatish mantiqi
+                console.log("Savollar:", data.questions);
+            }
+        })
+        .catch(err => console.error("Xatolik:", err));
 }
 
 // 4. NATIJALARNI TAHLIL QILISH (REVIEW)

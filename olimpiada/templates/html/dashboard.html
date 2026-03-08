@@ -16,7 +16,9 @@
             </div>
             <nav class="sidebar-nav">
                 <a href="javascript:void(0)" onclick="window.location.reload()" class="active"><i class="fas fa-home"></i> Asosiy panel</a>
-                <a href="#"><i class="fas fa-edit"></i> Mening testlarim</a>
+                <a href="javascript:void(0)" onclick="loadTab('my-tests')">
+                    <i class="fas fa-edit"></i> Mening testlarim
+                </a>
                 <a href="javascript:void(0)" onclick="loadTab('results')" id="nav-results">
                     <i class="fas fa-chart-line"></i> Natijalar
                 </a>
@@ -98,6 +100,8 @@
                                     <div class="quiz-icon">
                                         {% if 'matematika' in test.subject.lower %}
                                             <i class="fas fa-calculator"></i>
+                                        {% elif 'fizika' in test.subject.lower %}
+                                            <i class="fas fa-atom"></i>
                                         {% else %}
                                             <i class="fas fa-book"></i>
                                         {% endif %}
@@ -109,7 +113,13 @@
 
                                         <div style="display: flex; gap: 10px; font-size: 11px; color: #2563eb; font-weight: 600;">
                                             <span><i class="far fa-calendar-alt"></i> {{ student.exam_date|date:"d.m.Y" }}</span>
-                                            <span><i class="far fa-clock"></i> {{ student.exam_time|time:"H:i" }}</span>
+                                            <span><i class="far fa-clock"></i>
+                                                {% if test.exam_time %}
+                                                    {{ test.exam_time|time:"H:i" }}
+                                                {% else %}
+                                                    {{ student.exam_time|time:"H:i" }}
+                                                {% endif %}
+                                            </span>
                                         </div>
                                     </div>
 
@@ -122,43 +132,44 @@
                                                 <i class="fas fa-info-circle"></i> Natija qayd etildi
                                             </p>
 
-                                        {% elif test_status == "active" %}
+                                        {% elif test.status == "active" %}
                                             <button class="start-btn" onclick="startTest('{{ test.subject }}', {{ settings.test_duration|default:60 }}, {{ test.id }})">Boshlash</button>
                                             <p style="color: #10b981; font-size: 11px; margin-top: 5px; margin-right: 7px; font-weight: bold;"><i class="fas fa-check-circle"></i> Imtihon ochiq</p>
 
-                                        {% elif test_status == "expired" %}
+                                        {% elif test.status == "expired" %}
                                             <button class="start-btn" style="background: #f1f5f9; color: #94a3b8; cursor: not-allowed;" disabled>Boshlash</button>
                                             <p style="color: #ef4444; font-size: 11px; margin-top: 5px; margin-right: 7px; font-weight: bold;"><i class="fas fa-times-circle"></i> Muddat tugadi</p>
 
                                         {% else %}
                                             <button class="start-btn waiting-btn" style="background: #cbd5e1; cursor: not-allowed;" disabled>Kutish</button>
-                                            <p style="color: #ef4444; font-size: 11px; margin-top: 5px; margin-right: 10px;">Vaqt: {{ student.exam_time|time:"H:i" }}</p>
+                                            <p style="color: #ef4444; font-size: 11px; margin-top: 5px; margin-right: 10px;">
+                                                Vaqt: {% if test.exam_time %}{{ test.exam_time|time:"H:i" }}{% else %}{{ student.exam_time|time:"H:i" }}{% endif %}
+                                            </p>
                                         {% endif %}
                                     </div>
                                 </div>
                                 {% endfor %}
                             {% else %}
                                 <div class="quiz-item">
-                                    <p>Sizning sinfingiz va faningizga mos testlar hozircha mavjud emas.</p>
+                                    <p>Sizning sinfingiz va tanlangan fanlaringizga mos testlar hozircha mavjud emas.</p>
                                 </div>
                             {% endif %}
                         </div>
-
                         <div class="recent-results">
                             <div class="section-header"><h2>Oxirgi natija</h2></div>
                             <div class="result-list">
-                                {% for res in student_results|slice:":1" %} {# Faqat oxirgi 3 tasini ko'rsatish uchun #}
+                                {% for res in student_results|slice:":1" %}
                                 <div class="result-item">
                                     <span>{{ res.subject }}</span>
                                     <span class="score {% if res.score_percent >= 80 %}high{% elif res.score_percent >= 60 %}med{% else %}low{% endif %}">
-                                        {# score_percent'da biz ballni saqlayapmiz, shuning uchun uni chiqaramiz #}
-                                        {{ average_score|floatformat:0 }}/100
+                                        {% widthratio res.correct_count 1 settings.default_points %}/{% widthratio res.total_questions 1 settings.default_points %}
                                     </span>
                                 </div>
                                 {% empty %}
                                 <div class="result-item"><span>Hozircha natija yo'q</span></div>
                                 {% endfor %}
                             </div>
+
                             {% for res in student_results %}
                                 <div class="result-item">
                                     <span>{{ res.subject }} - {{ res.score_percent|floatformat:0 }}%</span>
@@ -166,8 +177,8 @@
                                     {{ res.user_answers|json_script:res.id }}
 
                                     <button class="btn-detail"
-                                            onclick="reviewTest({{ res.test_material_id }}, {{ res.id }})"><i class="fas fa-eye"></i>
-                                        Tahlil
+                                            onclick="reviewTest({{ res.test_material_id }}, {{ res.id }})">
+                                        <i class="fas fa-eye"></i> Tahlil
                                     </button>
                                 </div>
                             {% endfor %}
@@ -207,6 +218,118 @@
                         </div>
                     </div>
                 </section>
+                <section id="my-tests" class="content-body" style="display: none; padding: 20px;">
+                    <div class="page-header" style="margin-bottom: 30px;">
+                        <h2 style="font-size: 24px; color: #1e293b; font-weight: 700;">
+                            <i class="fas fa-layer-group" style="color: #4f46e5; margin-right: 12px;"></i>Imtihonlar Markazi
+                        </h2>
+                        <p style="color: #64748b; font-size: 14px;">Barcha majburiy va ixtiyoriy testlaringizni shu yerdan boshqarishingiz mumkin.</p>
+                    </div>
+
+                    <div class="main-card-premium" style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px rgba(0,0,0,0.03); margin-bottom: 35px; overflow: hidden;">
+                        <div style="background: #4f46e5; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="color: white; margin: 0; font-size: 18px; font-weight: 600;">
+                                <i class="fas fa-star" style="margin-right: 10px;"></i>Asosiy Imtihon (Majburiy)
+                            </h3>
+                            <span style="background: rgba(255,255,255,0.2); color: white; padding: 4px 15px; border-radius: 30px; font-size: 12px; font-weight: 600; backdrop-filter: blur(5px);">
+                                Sizning sinfingiz: {{ student.grade }}-sinf
+                            </span>
+                        </div>
+
+                        <div style="padding: 25px;">
+                            {% if main_tests %}
+                                <div style="display: grid; gap: 15px;">
+                                    {% for test in main_tests %}
+                                    <div class="test-row-item" style="display: flex; justify-content: space-between; align-items: center; padding: 18px; background: white; border-radius: 15px; border: 1px solid #f1f5f9; transition: 0.3s; cursor: pointer;" onmouseover="this.style.borderColor='#4f46e5'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#f1f5f9'; this.style.transform='translateY(0)'">
+                                        <div style="display: flex; align-items: center; gap: 20px;">
+                                            <div style="width: 50px; height: 50px; background: #eef2ff; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #4f46e5; font-size: 20px;">
+                                                <i class="fas fa-book-reader"></i>
+                                            </div>
+                                            <div>
+                                                <h4 style="margin: 0; color: #1e293b; font-size: 16px;">{{ test.subject }}</h4>
+                                                <div style="display: flex; gap: 15px; margin-top: 4px;">
+                                                    <span style="font-size: 12px; color: #64748b;"><i class="far fa-clock"></i> 60 daqiqa</span>
+                                                    <span style="font-size: 12px; color: #64748b;"><i class="fas fa-list-ol"></i> 25 savol</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <a href="{% url 'start_test' test.id %}" style="background: #4f46e5; color: white; border: none; padding: 10px 25px; border-radius: 10px; font-weight: 600; cursor: pointer; text-decoration: none; transition: 0.3s;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
+                                            Boshlash
+                                        </a>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div style="text-align: center; padding: 40px;">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/6134/6134065.png" style="width: 80px; opacity: 0.5; margin-bottom: 15px;">
+                                    <p style="color: #94a3b8; font-size: 15px;">Hozircha sizning yo'nalishingizda asosiy testlar mavjud emas.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 350px 1fr; gap: 25px;">
+
+                        <div class="optional-selector-card" style="background: white; padding: 25px; border-radius: 20px; border: 1px solid #e2e8f0; align-self: start;">
+                            <h3 style="font-size: 16px; color: #1e293b; margin-bottom: 20px; font-weight: 700;">
+                                <i class="fas fa-plus-circle" style="color: #10b981; margin-right: 8px;"></i>Fanlarni sozlash
+                            </h3>
+                            <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Kamida bitta fan tanlashingiz shart:</p>
+
+                            <form method="POST">
+                                {% csrf_token %}
+                                <div style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 15px;">
+
+                                    <select name="subject1" style="width: 100%; padding: 12px 15px; border: 2px solid #eef2ff; border-radius: 12px; font-size: 14px; color: #1e293b; outline: none; cursor: pointer; background-color: #f8fafc; transition: 0.3s;" onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#eef2ff'">
+                                        <option value="" disabled selected>1-fanni tanlang (Ixtiyoriy)</option>
+                                        <option value="Matematika">Matematika</option>
+                                        <option value="Fizika">Fizika</option>
+                                        <option value="Ona-tili">Ona tili</option>
+                                        <option value="Ingliz tili">Ingliz tili</option>
+                                        <option value="Geografiya">Geografiya</option>
+                                        <option value="Tarix">Tarix</option>
+                                        <option value="Rus tili">Rus tili</option>
+                                    </select>
+                                </div>
+
+                                <button type="submit" name="save_optional" style="width: 100%; background: #10b981; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
+                                    <i class="fas fa-save"></i> O'zgarishlarni saqlash
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="optional-tests-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
+                            {% for test in optional_tests %}
+                            <div class="optional-card-glass" style="background: rgba(255, 255, 255, 0.8); border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; backdrop-filter: blur(10px); position: relative; overflow: hidden; transition: 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                                <div style="position: absolute; top: -10px; right: -10px; font-size: 60px; color: #10b981; opacity: 0.05;">
+                                    <i class="fas fa-flask"></i>
+                                </div>
+                                <span style="background: #ecfdf5; color: #10b981; padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: 700; text-transform: uppercase;">Mashq</span>
+                                <h4 style="margin: 15px 0 10px 0; color: #1e293b; font-size: 17px;">{{ test.subject }}</h4>
+                                <p style="color: #64748b; font-size: 12px; line-height: 1.5; margin-bottom: 20px;">Ushbu fan bo'yicha bazada mavjud mashqlar bilan bilimingizni oshiring.</p>
+                                <form method="POST" style="flex: 1; margin: 0;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="subject_to_delete" value="{{ test.subject }}">
+                                    <button type="submit" name="delete_optional"
+                                            style="width: 100%; display: flex; align-items: center; justify-content: center; background: #fff1f2; border: 1px solid #fecaca; color: #ef4444; padding: 10px; border-radius: 12px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.3s;"
+                                            onmouseover="this.style.background='#fee2e2'; this.style.transform='translateY(-2px)';"
+                                            onmouseout="this.style.background='#fff1f2'; this.style.transform='translateY(0)';"
+                                            onclick="return confirm('Haqiqatdan ham ushbu fanni o\'chirmoqchimisiz?')">
+                                        <i class="fas fa-trash-alt" style="margin-right: 6px; font-size: 12px;"></i> O'chirish
+                                    </button>
+                                </form>
+                            </div>
+                            {% empty %}
+                            <div style="grid-column: 1 / -1; background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 20px; padding: 50px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                <i class="fas fa-mouse-pointer" style="font-size: 30px; color: #cbd5e1; margin-bottom: 15px;"></i>
+                                <p style="color: #94a3b8; font-size: 14px;">Hali qo'shimcha fanlar tanlanmagan.<br>Chap tarafdan kerakli fanni tanlang.</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                    </div>
+                </section>
+
 
 
                 <section id="results-section" class="content-body" style="display: none;">
@@ -273,7 +396,7 @@
 
                                 <div style="position: absolute; text-align: center; z-index: 3;">
                                     <div style="font-size: 32px; font-weight: 900; color: #1e293b; line-height: 1;">
-                                        {{ average_score|floatformat:0 }}<span style="font-size: 16px; font-weight: 600; color: #64748b;">%</span>
+                                        {{ average_score|floatformat:0 }}<span style="font-size: 16px; font-weight: 600; color: #64748b;">ball</span>
                                     </div>
                                     <div style="font-size: 10px; font-weight: 700; color: #10b981; margin-top: 5px; background: #f0fdf4; padding: 2px 8px; border-radius: 10px;">
                                         {% if average_score >= 85 %}PROFESSIONAL

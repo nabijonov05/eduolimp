@@ -3,29 +3,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const sections = document.querySelectorAll('.admin-section');
     const pageTitle = document.getElementById('page-title');
 
-    // --- UNIVERSAL URL TEKSHIRISH TIZIMI ---
-    const urlParams = new URLSearchParams(window.location.search);
-    const activeSection = urlParams.get('section');
-
-    // Qaysi parametr kelsa, qaysi ID ochilishi va sarlavha qanday bo'lishi
     const sectionConfig = {
+        'dashboard': { id: 'dashboard-section', title: "Umumiy nazorat" },
         'test':      { id: 'test-section',      title: "Yangi test qo'shish" },
         'users':     { id: 'user-section',      title: "Foydalanuvchilar" },
-        'settings':  { id: 'settings-section',  title: "Tizim sozlamalari" },
         'analytics': { id: 'analytics-section', title: "Analitika" },
-        'dashboard': { id: 'dashboard-section', title: "Umumiy nazorat" }
+        'settings':  { id: 'settings-section',  title: "Tizim sozlamalari" }
     };
 
-    if (activeSection && sectionConfig[activeSection]) {
-        const config = sectionConfig[activeSection];
+    // --- ASOSIY FUNKSIYA: Bo'limni faollashtirish ---
+    function activateSection(key) {
+        if (!sectionConfig[key]) key = 'dashboard';
+        const config = sectionConfig[key];
 
-        // 1. Bo'limni ochish
-        showSection(config.id);
+        // MUHIM: Har safar bo'lim o'zgarganda uni brauzer xotirasiga saqlaymiz
+        localStorage.setItem('activeAdminTab', key);
 
-        // 2. Sarlavhani o'zgartirish
-        pageTitle.innerText = config.title;
+        // 1. Hamma bo'limni yashirish
+        sections.forEach(s => s.style.display = 'none');
 
-        // 3. Sidebar'da menyuni aktiv qilish
+        // 2. Kerakli bo'limni ochish
+        const target = document.getElementById(config.id);
+        if (target) target.style.display = 'block';
+
+        // 3. Sarlavhani o'zgartirish
+        if (pageTitle) pageTitle.innerText = config.title;
+
+        // 4. Sidebar'da aktiv klassni to'g'rilash
         navLinks.forEach(l => {
             l.classList.remove('active');
             if (l.innerText.trim().includes(config.title)) {
@@ -33,50 +37,63 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // 4. Maxsus holat: Agar analitika bo'lsa grafikni chizish
-        if (activeSection === 'analytics') {
+        // Grafiklar bo'lsa chizish
+        if (key === 'analytics' && typeof renderAnalytics === 'function') {
             setTimeout(renderAnalytics, 150);
         }
     }
-    // ----------------------------------------------
 
+    // --- 1-QADAM: Sahifa yuklanganda holatni aniqlash ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlSection = urlParams.get('section');
+    const savedSection = localStorage.getItem('activeAdminTab');
+
+    // Ustuvorlik: 1. URL parametri, 2. localStorage (saqlangan), 3. Default (dashboard)
+    const initialSection = urlSection || savedSection || 'dashboard';
+
+    activateSection(initialSection);
+
+    // --- 2-QADAM: Tugmalar bosilganda ishlash ---
     navLinks.forEach((link) => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
 
-            // Aktiv klassni boshqarish
-            navLinks.forEach(l => l.classList.remove('active'));
-            this.classList.add('active');
-
             const linkText = this.innerText.trim();
-            pageTitle.innerText = linkText;
+            let sectionKey = 'dashboard';
 
-            // Bo'limlarni bosganda ko'rsatish
-            if (linkText.includes("Umumiy nazorat")) {
-                showSection('dashboard-section');
-            } else if (linkText.includes("Yangi test qo'shish")) {
-                showSection('test-section');
-            } else if (linkText.includes("Tizim sozlamalari")) {
-                showSection('settings-section');
-            } else if (linkText.includes("Foydalanuvchilar")) {
-                showSection('user-section');
-            } else if (linkText.includes("Analitika")) {
-                showSection('analytics-section');
-                setTimeout(renderAnalytics, 150);
-            }
+            if (linkText.includes("Yangi test qo'shish")) sectionKey = 'test';
+            else if (linkText.includes("Foydalanuvchilar")) sectionKey = 'users';
+            else if (linkText.includes("Analitika")) sectionKey = 'analytics';
+            else if (linkText.includes("Tizim sozlamalari")) sectionKey = 'settings';
+
+            // URL'ni o'zgartirish
+            const newUrl = `${window.location.pathname}?section=${sectionKey}`;
+            window.history.pushState({ section: sectionKey }, '', newUrl);
+
+            activateSection(sectionKey);
         });
     });
 
-    function showSection(id) {
-        hideAllSections();
-        const section = document.getElementById(id);
-        if (section) section.style.display = 'block';
-    }
-
-    function hideAllSections() {
-        sections.forEach(s => s.style.display = 'none');
-    }
+    // Brauzerning "Orqaga" tugmasi bosilganda ishlashi uchun
+    window.addEventListener('popstate', (event) => {
+        const section = new URLSearchParams(window.location.search).get('section') || 'dashboard';
+        activateSection(section);
+    });
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Fan tanlanganda sinflarni chiqarish va statusni tekshirish
 function selectSubject(subjectName, element) {

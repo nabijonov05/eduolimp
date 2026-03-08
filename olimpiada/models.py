@@ -24,6 +24,7 @@ class Student(models.Model):
     school = models.CharField(max_length=200)
     grade = models.IntegerField()
     subject = models.CharField(max_length=100)
+    optional_subjects = models.JSONField(default=list, blank=True)
     exam_date = models.DateField()
     exam_time = models.TimeField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -74,7 +75,7 @@ from django.db import models
 class SystemSettings(models.Model):
     total_questions = models.IntegerField(default=30)
     test_duration = models.IntegerField(default=60) # Daqiqada
-    retry_attempts = models.IntegerField(default=1)
+    default_points = models.IntegerField(default=4)
 
     def __str__(self):
         return "Tizim sozlamalari"

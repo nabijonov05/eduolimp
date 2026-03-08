@@ -516,3 +516,25 @@ body { background: var(--bg-light); color: var(--text-dark); }
     border-color: #10b981 !important;
     transition: 0.3s;
 }
+
+
+
+
+.custom-check-card:hover {
+    border-color: #10b981;
+    background: #f0fdf4;
+}
+
+.custom-check-card.selected {
+    border-color: #10b981;
+    background: #10b981;
+    color: white;
+}
+
+.test-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
