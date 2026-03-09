@@ -108,21 +108,38 @@ function getCookie(name) {
 }
 
 // 3. TESTNI BOSHLASH
-function startTest(testId) {
+function startTest(testId, duration, subject) {
     if (!testId || testId === 'undefined') {
         alert("Xatolik: Test ID topilmadi!");
         return;
     }
 
+    activeTestId = testId; // Global ID-ni saqlaymiz
     const url = `/get-questions/${testId}/`;
-    console.log("So'rov yuborilmoqda:", url);
 
     fetch(url)
         .then(response => response.json())
         .then(data => {
-            if (data.questions) {
-                // Savollar keldi, endi ularni ekranda ko'rsatish mantiqi
-                console.log("Savollar:", data.questions);
+            if (data.questions && data.questions.length > 0) {
+                // 1. Ma'lumotlarni global o'zgaruvchilarga yuklash
+                allQuestions = data.questions;
+                currentQuestion = 1;
+                userAnswers = {};
+                isReviewMode = false;
+
+                // 2. Modal sarlavhasini yangilash
+                const modalTitle = document.getElementById('modalSubjectTitle');
+                if (modalTitle) modalTitle.innerText = subject;
+
+                // 3. Ekranni chizish va taymerni boshlash
+                renderQuestion();
+                startTimer(duration * 60);
+
+                // 4. Modalni ko'rsatish
+                document.getElementById('testModal').style.display = 'flex';
+                document.body.style.overflow = 'hidden'; // Orqa fonni qotirish
+            } else {
+                alert("Ushbu fan bo'yicha savollar topilmadi.");
             }
         })
         .catch(err => console.error("Xatolik:", err));

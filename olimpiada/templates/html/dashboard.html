@@ -112,12 +112,13 @@
                                         <p style="font-size: 13px; color: #64748b; margin-bottom: 5px;">{{ test.grade }}-sinf uchun • 25 ta savol</p>
 
                                         <div style="display: flex; gap: 10px; font-size: 11px; color: #2563eb; font-weight: 600;">
-                                            <span><i class="far fa-calendar-alt"></i> {{ student.exam_date|date:"d.m.Y" }}</span>
+                                            <span><i class="far fa-calendar-alt"></i> {{ test.display_date|date:"d.m.Y" }}</span>
+
                                             <span><i class="far fa-clock"></i>
-                                                {% if test.exam_time %}
-                                                    {{ test.exam_time|time:"H:i" }}
+                                                {% if test.display_time %}
+                                                    {{ test.display_time|time:"H:i" }}
                                                 {% else %}
-                                                    {{ student.exam_time|time:"H:i" }}
+                                                    00:00
                                                 {% endif %}
                                             </span>
                                         </div>
@@ -128,22 +129,26 @@
                                             <button class="start-btn" style="background: #e2e8f0; color: #94a3b8; cursor: not-allowed; border: none;" disabled>
                                                 <i class="fas fa-check-double"></i> Yakunlangan
                                             </button>
-                                            <p style="color: #64748b; font-size: 11px; margin-top: 5px; margin-right: 10px; font-weight: bold;">
+                                            <p style="color: #64748b; font-size: 11px; margin-top: 5px; font-weight: bold;">
                                                 <i class="fas fa-info-circle"></i> Natija qayd etildi
                                             </p>
 
                                         {% elif test.status == "active" %}
-                                            <button class="start-btn" onclick="startTest('{{ test.subject }}', {{ settings.test_duration|default:60 }}, {{ test.id }})">Boshlash</button>
-                                            <p style="color: #10b981; font-size: 11px; margin-top: 5px; margin-right: 7px; font-weight: bold;"><i class="fas fa-check-circle"></i> Imtihon ochiq</p>
+                                            <button class="start-btn" onclick="startTest({{ test.id }}, {{ settings.test_duration }}, '{{ test.subject }}')">Boshlash</button>
+                                            <p style="color: #10b981; font-size: 11px; margin-top: 5px; font-weight: bold;">
+                                                <i class="fas fa-check-circle"></i> Imtihon ochiq
+                                            </p>
 
                                         {% elif test.status == "expired" %}
                                             <button class="start-btn" style="background: #f1f5f9; color: #94a3b8; cursor: not-allowed;" disabled>Boshlash</button>
-                                            <p style="color: #ef4444; font-size: 11px; margin-top: 5px; margin-right: 7px; font-weight: bold;"><i class="fas fa-times-circle"></i> Muddat tugadi</p>
+                                            <p style="color: #ef4444; font-size: 11px; margin-top: 5px; font-weight: bold;">
+                                                <i class="fas fa-times-circle"></i> Muddat tugadi
+                                            </p>
 
                                         {% else %}
                                             <button class="start-btn waiting-btn" style="background: #cbd5e1; cursor: not-allowed;" disabled>Kutish</button>
-                                            <p style="color: #ef4444; font-size: 11px; margin-top: 5px; margin-right: 10px;">
-                                                Vaqt: {% if test.exam_time %}{{ test.exam_time|time:"H:i" }}{% else %}{{ student.exam_time|time:"H:i" }}{% endif %}
+                                            <p style="color: #6366f1; font-size: 11px; margin-top: 5px; font-weight: bold;">
+                                                <i class="fas fa-clock"></i> Vaqt: {{ test.assigned_time|time:"H:i" }}
                                             </p>
                                         {% endif %}
                                     </div>

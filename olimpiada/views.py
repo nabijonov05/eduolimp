@@ -239,7 +239,7 @@ def add_student(request):
 #===================================================================================================================
 
 def student_dashboard(request):
-    # 1. FOYDALANUVCHINI ANIQLASH (Eng birinchi bajarilishi shart)
+    # 1. FOYDALANUVCHINI ANIQLASH
     student_id = request.session.get('student_id')
     if not student_id:
         return redirect('student_login')
@@ -253,14 +253,10 @@ def student_dashboard(request):
         return redirect('student_login')
 
     # 3. FANLAR RO'YXATI (Dropdown uchun)
-    all_other_subjects = [
-        "Matematika", "Fizika", "Ona-tili",
-        "Ingliz tili", "Geografiya", "Tarix", "Rus tili"
-    ]
+    all_other_subjects = ["Matematika", "Fizika", "Ona-tili", "Ingliz tili", "Geografiya", "Tarix", "Rus tili"]
 
-    # 4. FANLARNI SAQLASH (POST so'rovi)
+    # 4. FANLARNI SAQLASH VA O'CHIRISH (POST)
     if request.method == "POST":
-        # 1. Yangi fan qo'shish mantiqi
         if 'save_optional' in request.POST:
             s1 = request.POST.get('subject1')
             s2 = request.POST.get('subject2')
@@ -270,132 +266,96 @@ def student_dashboard(request):
             student.save()
             return redirect('student_dashboard')
 
-        # 2. Mavjud fanni o'chirish mantiqi
         elif 'delete_optional' in request.POST:
             sub_to_del = request.POST.get('subject_to_delete')
             if student.optional_subjects and sub_to_del in student.optional_subjects:
-                # Ro'yxatdan fanni olib tashlaymiz
-                updated_list = [s for s in student.optional_subjects if s != sub_to_del]
-                student.optional_subjects = updated_list
+                student.optional_subjects = [s for s in student.optional_subjects if s != sub_to_del]
                 student.save()
-                messages.info(request, f"{sub_to_del} fani ro'yxatdan o'chirildi.")
             return redirect('student_dashboard')
 
-        # GET so'rovi uchun filtrlarni POST dan tashqarida yozing
-    optional_subjects = student.optional_subjects if student.optional_subjects else []
-    optional_tests = TestMaterial.objects.filter(subject__in=optional_subjects, grade=student.grade)
-
-
-    # 5. SOZLAMALARNI OLISH
-    settings = SystemSettings.objects.filter(id=1).first()
-    if not settings:
-        # Agar settings hali yaratilmagan bo'lsa, vaqtinchalik obyekt
-        settings = type('obj', (object,), {'test_duration': 60, 'total_questions': 30, 'default_points': 4})
-
-    optional_subjects_list = student.optional_subjects if student.optional_subjects else []
-    optional_tests = TestMaterial.objects.filter(
-        subject__in=optional_subjects_list,
-        grade=student.grade
-    )
-
-    # Asosiy imtihon testi (Tepadagi oyna uchun)
-    available_tests = TestMaterial.objects.filter(
-        subject__iexact=student.subject,
-        grade=student.grade
-    )
-
-    # 6. TESTLARNI FILTRLASH (Majburiy + Ixtiyoriy)
-    all_selected_subjects = [student.subject]  # Asosiy fan
+    # 5. TESTLARNI FILTRLASH (Asosiy + Ixtiyoriy fanlar)
+    all_selected_subjects = [student.subject]
     if student.optional_subjects:
         all_selected_subjects.extend(student.optional_subjects)
 
-    # TestMaterial'larni olish (Qavslar to'g'rilandi)
     available_tests = TestMaterial.objects.filter(
         subject__in=all_selected_subjects,
         grade=student.grade
     )
-    test_count = available_tests.count()
 
-    # 7. REYTING (LEADERBOARD) QISMI
-    leaderboard = []
-    user_rank = "-"
+    # 6. SOZLAMALARNI OLISH
+    settings = SystemSettings.objects.filter(id=1).first() or \
+               type('obj', (object,), {'test_duration': 60, 'total_questions': 30, 'default_points': 4})
 
-    # Hamma natijalarni baliga ko'ra saralab olamiz
-    all_results_rank = TestResult.objects.filter(
-        subject__iexact=student.subject,
-        grade=student.grade
-    ).order_by('-score_percent', 'date_taken')
-
-    seen_students = set()
-    for res in all_results_rank:
-        student_full_name = f"{res.first_name} {res.last_name}"
-        if student_full_name not in seen_students:
-            leaderboard.append(res)
-            seen_students.add(student_full_name)
-
-    for index, res in enumerate(leaderboard):
-        if res.first_name == student.first_name and res.last_name == student.last_name:
-            user_rank = index + 1
-            break
-
-    # 8. STATISTIKALAR VA VAQTNI HISOBLASH
-    results = TestResult.objects.filter(
-        first_name=student.first_name,
-        last_name=student.last_name
-    ).order_by('-date_taken')[:3]
-
-    completed_count = TestResult.objects.filter(
-        first_name=student.first_name,
-        last_name=student.last_name
-    ).count()
-
-    average_score = 0
-    if completed_count > 0:
-        stats = TestResult.objects.filter(
-            first_name=student.first_name,
-            last_name=student.last_name
-        ).aggregate(Avg('correct_count'))
-
-        avg_correct = stats['correct_count__avg']
-        if avg_correct is not None:
-            point_multiplier = getattr(settings, 'default_points', 4)
-            average_score = round(float(avg_correct) * int(point_multiplier), 1)
-
-    # Imtihon holati (Vaqt)
+    # 7. HAR BIR TEST UCHUN STATUS VA VAQTNI HISOBLASH (DINAMIK)
     now = timezone.localtime(timezone.now())
-    exam_start = datetime.combine(student.exam_date, student.exam_time)
-    exam_start = timezone.make_aware(exam_start)
-    exam_end = exam_start + timedelta(hours=2)
 
-    if now < exam_start:
-        status = "waiting"
-    elif exam_start <= now <= exam_end:
-        status = "active"
-    else:
-        status = "expired"
-
-    # Har bir test topshirilganini tekshirish
     for test in available_tests:
+        # Test topshirilganini tekshirish
         test.is_already_done = TestResult.objects.filter(
             first_name=student.first_name,
             last_name=student.last_name,
             subject__iexact=test.subject
         ).exists()
 
-    # 9. CONTEXT GA YUBORISH
+        # DINAMIK VAQT: Bazadan shu fanga mos vaqtni qidiramiz
+        # Masalan: Ingliz tili bo'lsa, Ilhombekning 16:20 vaqtini topadi
+        subject_record = Student.objects.filter(
+            subject__iexact=test.subject,
+            grade=student.grade
+        ).first()
+
+        if subject_record:
+            test_time = subject_record.exam_time
+            test_date = subject_record.exam_date
+        else:
+            # Agar bazada bu fanga xos vaqt topilmasa, o'quvchining o'z vaqti
+            test_time = student.exam_time
+            test_date = student.exam_date
+
+        # Vaqtni formatlash va statusni aniqlash
+        start_dt = timezone.make_aware(datetime.combine(test_date, test_time))
+        end_dt = start_dt + timedelta(hours=2)
+
+        if now < start_dt:
+            test.status = "waiting"
+        elif start_dt <= now <= end_dt:
+            test.status = "active"
+        else:
+            test.status = "expired"
+
+        # HTML-da ko'rsatish uchun obyektga yuklaymiz
+        test.assigned_time = test_time
+
+    # 8. STATISTIKA VA REYTING
+    results = TestResult.objects.filter(first_name=student.first_name, last_name=student.last_name).order_by('-date_taken')[:3]
+    completed_count = TestResult.objects.filter(first_name=student.first_name, last_name=student.last_name).count()
+
+    all_results_rank = TestResult.objects.filter(subject__iexact=student.subject, grade=student.grade).order_by('-score_percent', 'date_taken')
+    leaderboard = []
+    seen = set()
+    for res in all_results_rank:
+        full_name = f"{res.first_name} {res.last_name}"
+        if full_name not in seen:
+            leaderboard.append(res)
+            seen.add(full_name)
+
+    user_rank = "-"
+    for index, res in enumerate(leaderboard):
+        if res.first_name == student.first_name and res.last_name == student.last_name:
+            user_rank = index + 1
+            break
+
+    # 9. CONTEXT YUBORISH
     return render(request, 'html/dashboard.html', {
         'student': student,
         'user_rank': user_rank,
         'available_tests': available_tests,
-        'test_count': test_count,
-        'test_status': status,
         'student_results': results,
         'completed_count': completed_count,
-        'average_score': average_score,
         'leaderboard': leaderboard,
         'settings': settings,
         'all_other_subjects': all_other_subjects,
-        'optional_tests': optional_tests,
     })
 #======================================================================================================
 
