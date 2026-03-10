@@ -36,7 +36,13 @@
                 <div class="user-profile-wrapper">
                     <div class="user-profile-trigger" onclick="toggleUserMenu(event)">
                         <div class="user-avatar-mini">
-                            <img src="{{ student.photo.url|default:'/static/default-avatar.png' }}" alt="Avatar" id="header-avatar-img">
+                            {% if student.photo %}
+                                <img src="{{ student.photo.url }}" alt="Avatar" id="header-avatar-img">
+                            {% else %}
+                                <div class="avatar-initials-mini">
+                                    {{ student.first_name|slice:":1" }}{{ student.last_name|slice:":1" }}
+                                </div>
+                            {% endif %}
                             <span class="online-status"></span>
                         </div>
                         <div class="user-meta">
@@ -49,7 +55,13 @@
                     <div id="userDropdown" class="modern-dropdown">
                         <div class="dropdown-header">
                             <div class="avatar-edit-wrapper">
-                                <img src="{{ student.photo.url|default:'/static/default-avatar.png' }}" id="dropdown-avatar-preview">
+                                {% if student.photo %}
+                                    <img src="{{ student.photo.url }}" id="dropdown-avatar-preview">
+                                {% else %}
+                                    <div class="avatar-initials-large">
+                                        {{ student.first_name|slice:":1" }}{{ student.last_name|slice:":1" }}
+                                    </div>
+                                {% endif %}
                                 <label for="photo-upload" class="edit-photo-btn" title="Rasmni o'zgartirish">
                                     <i class="fas fa-camera"></i>
                                 </label>
@@ -543,8 +555,14 @@
                         {% for top in leaderboard|slice:":3" %}
                         <div class="podium-item {% if forloop.counter == 1 %}rank-gold{% elif forloop.counter == 2 %}rank-silver{% else %}rank-bronze{% endif %}">
                             <div style="position: relative; display: inline-block;">
-                                <img src="{{ student.photo.url|default:'/static/default-avatar.png' }}"
-                                     style="width: 70px; height: 70px; border-radius: 50%;">
+                                {% if student.photo %}
+                                    <img src="{{ student.photo.url|default:'/static/default-avatar.png' }}"
+                                         style="width: 70px; height: 70px; border-radius: 50%;">
+                                {% else %}
+                                    <div class="podium-avatar-initials">
+                                        {{ top.first_name|slice:":1" }}{{ top.last_name|slice:":1" }}
+                                    </div>
+                                {% endif %}
                                 <i class="fas fa-medal" style="position: absolute; bottom: 0; right: 0; font-size: 20px;
                                    color: {% if forloop.counter == 1 %}#ffd700{% elif forloop.counter == 2 %}#c0c0c0{% else %}#cd7f32{% endif %};"></i>
                             </div>

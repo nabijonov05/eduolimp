@@ -485,29 +485,61 @@ window.processPhotoUpload = function() {
     const file = fileInput.files[0];
     if (!file) return;
 
-    // 1. Ekranda rasmni darhol yangilash
+    // 1. Ekranda (Live Preview) ko'rsatish
     const reader = new FileReader();
     reader.onload = (e) => {
-        document.getElementById('header-avatar-img').src = e.target.result;
-        document.getElementById('dropdown-avatar-preview').src = e.target.result;
+        const headerImg = document.getElementById('header-avatar-img');
+        const dropImg = document.getElementById('dropdown-avatar-preview');
+
+        if (headerImg) {
+            headerImg.src = e.target.result;
+        } else {
+            const miniContainer = document.querySelector('.user-avatar-mini');
+            if (miniContainer) {
+                miniContainer.innerHTML = `<img src="${e.target.result}" id="header-avatar-img"><span class="online-status"></span>`;
+            }
+        }
+
+        if (dropImg) {
+            dropImg.src = e.target.result;
+        } else {
+            const largeContainer = document.querySelector('.avatar-edit-wrapper');
+            if (largeContainer) {
+                largeContainer.innerHTML = `
+                    <img src="${e.target.result}" id="dropdown-avatar-preview">
+                    <label for="photo-upload" class="edit-photo-btn"><i class="fas fa-camera"></i></label>
+                `;
+            }
+        }
     };
     reader.readAsDataURL(file);
 
-    // 2. Serverga yuborish (AJAX)
+    // 2. Serverga (Django) yuborish qismi
     const formData = new FormData();
     formData.append('profile_photo', file);
-    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
-    fetch('/update-profile-photo/', { // urls.py dagi manzilingiz
+    // CSRF tokenni olish (Django xavfsizligi uchun shart)
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]') ?
+                      document.querySelector('[name=csrfmiddlewaretoken]').value : '';
+
+    fetch('/update-profile-photo/', {
         method: 'POST',
         body: formData,
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            console.log("Rasm muvaffaqiyatli saqlandi!");
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrftoken // 403 xatosini oldini oladi
         }
     })
-    .catch(error => console.error('Xatolik:', error));
+    .then(response => {
+        if (!response.ok) throw new Error('Serverda xatolik yuz berdi');
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            console.log("Muvaffaqiyatli saqlandi:", data.url);
+        }
+    })
+    .catch(error => {
+        console.error('Yuklashda xatolik:', error);
+    });
 };

@@ -282,6 +282,51 @@ body { background: var(--bg-light); color: var(--text-dark); }
 
 .logout-danger:hover i { color: #dc2626; }
 
+
+
+/* Tepadagi kichik doira uchun */
+.avatar-initials-mini {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed); /* Binafsharang gradient */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    border-radius: 50%; /* Doira shakli */
+    text-transform: uppercase;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Dropdown ichidagi katta doira uchun */
+.avatar-initials-large {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 28px; /* Katta harflar */
+    border-radius: 50%;
+    text-transform: uppercase;
+    margin: 0 auto 15px; /* Markazlash va pastdan joy tashlash */
+    border: 3px solid #fff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* Profil qismini to'g'rilash */
+.user-avatar-mini {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* ==========================================
    5. DASHBOARD ELEMENTLARI (BANNER VA STATS)
    ========================================== */
@@ -636,6 +681,26 @@ body { background: var(--bg-light); color: var(--text-dark); }
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
+.podium-avatar-initials {
+    width: 70px;
+    height: 70px;
+    /* Zamonaviy gradient rangi */
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800; /* Qalin harflar */
+    font-size: 24px;
+    border-radius: 50%; /* Mukammal doira */
+    text-transform: uppercase;
+
+    /* Tashqi ko'rinish effektlari */
+    border: 3px solid #ffffff;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3); /* Yengil rangli soya */
+    margin: 0 auto; /* Markazlash uchun */
+    transition: transform 0.3s ease;
+}
 
 /* ==========================================
    4. SERTIFIKATLAR VA MINI KARTALAR
