@@ -29,6 +29,7 @@ class Student(models.Model):
     exam_time = models.TimeField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+    photo = models.ImageField(upload_to='students/photos/', null=True, blank=True)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"

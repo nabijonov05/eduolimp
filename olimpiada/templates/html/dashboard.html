@@ -33,24 +33,46 @@
                     <i class="fas fa-search"></i>
                     <input type="text" placeholder="Testlarni izlash...">
                 </div>
-                <div class="user-profile" onclick="toggleUserMenu(event)">
-                    <div class="user-info">
-                        <span class="user-name">{{ student.first_name }}</span>
-                        <span class="user-role">Ishtirokchi</span>
-                    </div>
-                    <img src="https://ui-avatars.com/api/?name={{ student.first_name }}+{{ student.last_name }}&background=random&color=fff&uppercase=true&length=2" alt="Avatar">
-
-                    <div id="userDropdown" class="user-dropdown">
-                        <div class="dropdown-header">
-                            <strong>{{ student.first_name }} {{ student.last_name }}</strong>
-                            <span>ID: {{ student.id|default:"1001" }}</span>
+                <div class="user-profile-wrapper">
+                    <div class="user-profile-trigger" onclick="toggleUserMenu(event)">
+                        <div class="user-avatar-mini">
+                            <img src="{{ student.photo.url|default:'/static/default-avatar.png' }}" alt="Avatar" id="header-avatar-img">
+                            <span class="online-status"></span>
                         </div>
-                        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 8px 0;">
-                        <a href="{% url 'student_login' %}" class="dropdown-item logout-link">
-                            <i class="fas fa-sign-out-alt"></i> Chiqish
-                        </a>
+                        <div class="user-meta">
+                            <span class="user-name-text">{{ student.first_name }}</span>
+                            <span class="user-status-text">Ishtirokchi</span>
+                        </div>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+
+                    <div id="userDropdown" class="modern-dropdown">
+                        <div class="dropdown-header">
+                            <div class="avatar-edit-wrapper">
+                                <img src="{{ student.photo.url|default:'/static/default-avatar.png' }}" id="dropdown-avatar-preview">
+                                <label for="photo-upload" class="edit-photo-btn" title="Rasmni o'zgartirish">
+                                    <i class="fas fa-camera"></i>
+                                </label>
+                            </div>
+                            <h4 class="user-full-name">{{ student.first_name }} {{ student.last_name }}</h4>
+                            <span class="user-id">ID: #{{ student.id|default:"1" }}</span>
+                        </div>
+
+                        <div class="dropdown-content">
+                            <a href="#" class="dropdown-link"><i class="fas fa-user-cog"></i> Profil sozlamalari</a>
+                            <a href="#" class="dropdown-link">
+                                <i class="fas fa-certificate"></i>
+                                <span>Mening sertifikatlarim</span>
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="{% url 'student_login' %}" class="dropdown-link logout-danger">
+                                <i class="fas fa-sign-out-alt"></i> Tizimdan chiqish
+                            </a>
+                        </div>
                     </div>
                 </div>
+
+                <input type="file" id="photo-upload" style="display:none" accept="image/*" onchange="processPhotoUpload()">
             </header>
 
             <div id="main-content-area">
@@ -112,7 +134,7 @@
                                         <p style="font-size: 13px; color: #64748b; margin-bottom: 5px;">{{ test.grade }}-sinf uchun • 25 ta savol</p>
 
                                         <div style="display: flex; gap: 10px; font-size: 11px; color: #2563eb; font-weight: 600;">
-                                            <span><i class="far fa-calendar-alt"></i> {{ test.display_date|date:"d.m.Y" }}</span>
+                                            <span><i class="far fa-calendar-alt"></i> {{ test.display_time|time:"H:i" }}</span>
 
                                             <span><i class="far fa-clock"></i>
                                                 {% if test.display_time %}
@@ -148,7 +170,7 @@
                                         {% else %}
                                             <button class="start-btn waiting-btn" style="background: #cbd5e1; cursor: not-allowed;" disabled>Kutish</button>
                                             <p style="color: #6366f1; font-size: 11px; margin-top: 5px; font-weight: bold;">
-                                                <i class="fas fa-clock"></i> Vaqt: {{ test.assigned_time|time:"H:i" }}
+                                                <i class="fas fa-clock"></i> Vaqt: {{ test.display_time|time:"H:i" }}
                                             </p>
                                         {% endif %}
                                     </div>
@@ -258,7 +280,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <a href="{% url 'start_test' test.id %}" style="background: #4f46e5; color: white; border: none; padding: 10px 25px; border-radius: 10px; font-weight: 600; cursor: pointer; text-decoration: none; transition: 0.3s;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
+                                        <a href="#" style="background: #4f46e5; color: white; border: none; padding: 10px 25px; border-radius: 10px; font-weight: 600; cursor: pointer; text-decoration: none; transition: 0.3s;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
                                             Boshlash
                                         </a>
                                     </div>
@@ -521,7 +543,7 @@
                         {% for top in leaderboard|slice:":3" %}
                         <div class="podium-item {% if forloop.counter == 1 %}rank-gold{% elif forloop.counter == 2 %}rank-silver{% else %}rank-bronze{% endif %}">
                             <div style="position: relative; display: inline-block;">
-                                <img src="https://ui-avatars.com/api/?name={{ top.first_name }}+{{ top.last_name }}&background=random&color=fff"
+                                <img src="{{ student.photo.url|default:'/static/default-avatar.png' }}"
                                      style="width: 70px; height: 70px; border-radius: 50%;">
                                 <i class="fas fa-medal" style="position: absolute; bottom: 0; right: 0; font-size: 20px;
                                    color: {% if forloop.counter == 1 %}#ffd700{% elif forloop.counter == 2 %}#c0c0c0{% else %}#cd7f32{% endif %};"></i>

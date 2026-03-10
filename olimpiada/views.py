@@ -265,7 +265,6 @@ def student_dashboard(request):
             student.optional_subjects = list(set(current + new_subjects))[:2]
             student.save()
             return redirect('student_dashboard')
-
         elif 'delete_optional' in request.POST:
             sub_to_del = request.POST.get('subject_to_delete')
             if student.optional_subjects and sub_to_del in student.optional_subjects:
@@ -274,9 +273,9 @@ def student_dashboard(request):
             return redirect('student_dashboard')
 
     # 5. TESTLARNI FILTRLASH (Asosiy + Ixtiyoriy fanlar)
-    all_selected_subjects = [student.subject]
+    all_selected_subjects = [student.subject]  # Masalan: Matematika
     if student.optional_subjects:
-        all_selected_subjects.extend(student.optional_subjects)
+        all_selected_subjects.extend(student.optional_subjects)  # Masalan: + Ingliz tili, Geografiya
 
     available_tests = TestMaterial.objects.filter(
         subject__in=all_selected_subjects,
@@ -284,8 +283,8 @@ def student_dashboard(request):
     )
 
     # 6. SOZLAMALARNI OLISH
-    settings = SystemSettings.objects.filter(id=1).first() or \
-               type('obj', (object,), {'test_duration': 60, 'total_questions': 30, 'default_points': 4})
+    settings = SystemSettings.objects.filter(id=1).first()
+    duration_min = settings.test_duration if settings else 60
 
     # 7. HAR BIR TEST UCHUN STATUS VA VAQTNI HISOBLASH (DINAMIK)
     now = timezone.localtime(timezone.now())
@@ -298,40 +297,48 @@ def student_dashboard(request):
             subject__iexact=test.subject
         ).exists()
 
-        # DINAMIK VAQT: Bazadan shu fanga mos vaqtni qidiramiz
-        # Masalan: Ingliz tili bo'lsa, Ilhombekning 16:20 vaqtini topadi
+        # VAQTNI ANIQLASH LOGIKASI:
+        # Agar bu test sening asosiy faning bo'lsa, sening qatoringdagi vaqtni oladi.
+        # Agar bu ixtiyoriy fan bo'lsa, bazadagi shu fanni asosiy fan sifatida o'qiydigan
+        # boshqa foydalanuvchining (masalan Ilhombek yoki Abror) vaqtini oladi.
+
         subject_record = Student.objects.filter(
             subject__iexact=test.subject,
             grade=student.grade
         ).first()
 
         if subject_record:
-            test_time = subject_record.exam_time
+            test_time = subject_record.exam_time  # Ilhombekning Ingliz tili vaqti (16:20) kabi
             test_date = subject_record.exam_date
         else:
-            # Agar bazada bu fanga xos vaqt topilmasa, o'quvchining o'z vaqti
             test_time = student.exam_time
             test_date = student.exam_date
 
-        # Vaqtni formatlash va statusni aniqlash
-        start_dt = timezone.make_aware(datetime.combine(test_date, test_time))
-        end_dt = start_dt + timedelta(hours=2)
-
-        if now < start_dt:
-            test.status = "waiting"
-        elif start_dt <= now <= end_dt:
-            test.status = "active"
-        else:
-            test.status = "expired"
-
         # HTML-da ko'rsatish uchun obyektga yuklaymiz
-        test.assigned_time = test_time
+        test.display_time = test_time  # assigned_time edi
+        test.display_date = test_date
 
-    # 8. STATISTIKA VA REYTING
-    results = TestResult.objects.filter(first_name=student.first_name, last_name=student.last_name).order_by('-date_taken')[:3]
+        # Statusni aniqlash
+        if test_time and test_date:
+            start_dt = timezone.make_aware(datetime.combine(test_date, test_time))
+            end_dt = start_dt + timedelta(minutes=60)     #duration_min)
+
+            if now < start_dt:
+                test.status = "waiting"
+            elif start_dt <= now <= end_dt:
+                test.status = "active"
+            else:
+                test.status = "expired"
+        else:
+            test.status = "waiting"
+
+    # 8. STATISTIKA VA REYTING (Mavjud logikangiz)
+    results = TestResult.objects.filter(first_name=student.first_name, last_name=student.last_name).order_by(
+        '-date_taken')[:3]
     completed_count = TestResult.objects.filter(first_name=student.first_name, last_name=student.last_name).count()
 
-    all_results_rank = TestResult.objects.filter(subject__iexact=student.subject, grade=student.grade).order_by('-score_percent', 'date_taken')
+    all_results_rank = TestResult.objects.filter(subject__iexact=student.subject, grade=student.grade).order_by(
+        '-score_percent', 'date_taken')
     leaderboard = []
     seen = set()
     for res in all_results_rank:
@@ -356,6 +363,8 @@ def student_dashboard(request):
         'leaderboard': leaderboard,
         'settings': settings,
         'all_other_subjects': all_other_subjects,
+        'main_tests': [t for t in available_tests if t.subject.lower() == student.subject.lower()],  # Majburiy fan
+        'optional_tests': [t for t in available_tests if t.subject.lower() != student.subject.lower()],
     })
 #======================================================================================================
 
@@ -655,7 +664,27 @@ def bulk_update_students(request):
     return redirect(reverse('admin_dashboard') + '?section=users')
 
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
+
+def update_profile_photo(request):
+    if request.method == 'POST' and request.FILES.get('profile_photo'):
+        student_id = request.session.get('student_id')
+        if not student_id:
+            return JsonResponse({'status': 'error', 'message': 'Tizimga kirmagansiz'}, status=401)
+
+        student = Student.objects.filter(id=student_id).first()
+        if student:
+            # Eski rasmni o'chirish (ixtiyoriy, joyni tejash uchun)
+            if student.photo:
+                student.photo.delete(save=False)
+
+            student.photo = request.FILES['profile_photo']
+            student.save()
+            return JsonResponse({'status': 'success', 'url': student.photo.url})
+
+    return JsonResponse({'status': 'error', 'message': 'Rasm yuklanmadi'}, status=400)
 
 
 

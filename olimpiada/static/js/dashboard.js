@@ -459,3 +459,55 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("Chart.js yuklanmagan yoki canvas topilmadi!");
     }
 });
+
+
+
+// Menuni ochish/yopish
+function toggleUserMenu(event) {
+    event.stopPropagation();
+    const dropdown = document.getElementById('userDropdown');
+    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+}
+
+// Sichqoncha bosilganda ishlaydigan hodisa
+window.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('userDropdown');
+    const trigger = document.querySelector('.user-profile-trigger');
+
+    // Agar bosilgan joy (event.target) menyu yoki triggerni ichida bo'lmasa
+    if (!trigger.contains(event.target) && !dropdown.contains(event.target)) {
+        dropdown.style.display = 'none';
+    }
+});
+
+window.processPhotoUpload = function() {
+    const fileInput = document.getElementById('photo-upload');
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    // 1. Ekranda rasmni darhol yangilash
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        document.getElementById('header-avatar-img').src = e.target.result;
+        document.getElementById('dropdown-avatar-preview').src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+
+    // 2. Serverga yuborish (AJAX)
+    const formData = new FormData();
+    formData.append('profile_photo', file);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    fetch('/update-profile-photo/', { // urls.py dagi manzilingiz
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            console.log("Rasm muvaffaqiyatli saqlandi!");
+        }
+    })
+    .catch(error => console.error('Xatolik:', error));
+};
