@@ -267,15 +267,29 @@ def student_dashboard(request):
             return redirect('student_dashboard')
         elif 'delete_optional' in request.POST:
             sub_to_del = request.POST.get('subject_to_delete')
-            if student.optional_subjects and sub_to_del in student.optional_subjects:
+
+            # --- BLOKLASH: Imtihon boshlanganmi? ---
+            sub_record = Student.objects.filter(
+                subject__iexact=sub_to_del,
+                grade=student.grade
+            ).first()
+            can_delete = True
+            if sub_record and sub_record.exam_date and sub_record.exam_time:
+                start_dt = timezone.make_aware(
+                    datetime.combine(sub_record.exam_date, sub_record.exam_time)
+                )
+                if timezone.localtime(timezone.now()) >= start_dt:
+                    can_delete = False
+
+            if can_delete and student.optional_subjects and sub_to_del in student.optional_subjects:
                 student.optional_subjects = [s for s in student.optional_subjects if s != sub_to_del]
                 student.save()
             return redirect('student_dashboard')
 
-    # 5. TESTLARNI FILTRLASH (Asosiy + Ixtiyoriy fanlar)
-    all_selected_subjects = [student.subject]  # Masalan: Matematika
+    # 5. TESTLARNI FILTRLASH
+    all_selected_subjects = [student.subject]
     if student.optional_subjects:
-        all_selected_subjects.extend(student.optional_subjects)  # Masalan: + Ingliz tili, Geografiya
+        all_selected_subjects.extend(student.optional_subjects)
 
     available_tests = TestMaterial.objects.filter(
         subject__in=all_selected_subjects,
@@ -286,9 +300,34 @@ def student_dashboard(request):
     settings = SystemSettings.objects.filter(id=1).first()
     duration_min = settings.test_duration if settings else 60
 
-    # 7. HAR BIR TEST UCHUN STATUS VA VAQTNI HISOBLASH (DINAMIK)
+    # 7. VAQTNI OLISH
     now = timezone.localtime(timezone.now())
 
+    # 8. ASOSIY FAN TOPSHIRILGAN YOKI MUDDATI O'TGANINI TEKSHIRISH
+    main_subject_done = TestResult.objects.filter(
+        first_name=student.first_name,
+        last_name=student.last_name,
+        subject__iexact=student.subject
+    ).exists()
+
+    # Asosiy fanning vaqti o'tib ketganmi?
+    main_subject_expired = False
+    main_record = Student.objects.filter(
+        subject__iexact=student.subject,
+        grade=student.grade
+    ).first()
+
+    if main_record and main_record.exam_date and main_record.exam_time:
+        main_start = timezone.make_aware(
+            datetime.combine(main_record.exam_date, main_record.exam_time)
+        )
+        main_end = main_start + timedelta(minutes=duration_min)
+        main_subject_expired = now > main_end
+
+    # Ixtiyoriy fanlar ochilish sharti: topshirilgan YOKI muddati o'tgan
+    main_test_unlocked = main_subject_done or main_subject_expired
+
+    # 9. HAR BIR TEST UCHUN STATUS, VAQT VA UNLOCK
     for test in available_tests:
         # Test topshirilganini tekshirish
         test.is_already_done = TestResult.objects.filter(
@@ -297,31 +336,32 @@ def student_dashboard(request):
             subject__iexact=test.subject
         ).exists()
 
-        # VAQTNI ANIQLASH LOGIKASI:
-        # Agar bu test sening asosiy faning bo'lsa, sening qatoringdagi vaqtni oladi.
-        # Agar bu ixtiyoriy fan bo'lsa, bazadagi shu fanni asosiy fan sifatida o'qiydigan
-        # boshqa foydalanuvchining (masalan Ilhombek yoki Abror) vaqtini oladi.
+        # Unlock holati
+        if test.subject.lower() == student.subject.lower():
+            test.unlocked = True  # Asosiy fan har doim ochiq
+        else:
+            test.unlocked = main_test_unlocked  # Ixtiyoriy fan
 
+        # Vaqtni aniqlash
         subject_record = Student.objects.filter(
             subject__iexact=test.subject,
             grade=student.grade
         ).first()
 
         if subject_record:
-            test_time = subject_record.exam_time  # Ilhombekning Ingliz tili vaqti (16:20) kabi
+            test_time = subject_record.exam_time
             test_date = subject_record.exam_date
         else:
             test_time = student.exam_time
             test_date = student.exam_date
 
-        # HTML-da ko'rsatish uchun obyektga yuklaymiz
-        test.display_time = test_time  # assigned_time edi
+        test.display_time = test_time
         test.display_date = test_date
 
         # Statusni aniqlash
         if test_time and test_date:
             start_dt = timezone.make_aware(datetime.combine(test_date, test_time))
-            end_dt = start_dt + timedelta(minutes=60)     #duration_min)
+            end_dt = start_dt + timedelta(minutes=duration_min)
 
             if now < start_dt:
                 test.status = "waiting"
@@ -332,13 +372,27 @@ def student_dashboard(request):
         else:
             test.status = "waiting"
 
-    # 8. STATISTIKA VA REYTING (Mavjud logikangiz)
-    results = TestResult.objects.filter(first_name=student.first_name, last_name=student.last_name).order_by(
-        '-date_taken')[:3]
-    completed_count = TestResult.objects.filter(first_name=student.first_name, last_name=student.last_name).count()
+    # 10. STATISTIKA VA REYTING
+    all_my_results = TestResult.objects.filter(
+        first_name=student.first_name,
+        last_name=student.last_name
+    ).order_by('-date_taken')
 
-    all_results_rank = TestResult.objects.filter(subject__iexact=student.subject, grade=student.grade).order_by(
-        '-score_percent', 'date_taken')
+    results = all_my_results  # Barchasi (natijalar tarixida ko'rsatish uchun)
+    completed_count = all_my_results.count()
+
+    # O'rtacha ball
+    avg = all_my_results.aggregate(Avg('score_percent'))['score_percent__avg']
+    average_score = round(avg, 1) if avg else 0
+
+    # Sertifikat olish huquqi bor natijalar soni (80%+)
+    cert_count = all_my_results.filter(score_percent__gte=80).count()
+
+    all_results_rank = TestResult.objects.filter(
+        subject__iexact=student.subject,
+        grade=student.grade
+    ).order_by('-score_percent', 'date_taken')
+
     leaderboard = []
     seen = set()
     for res in all_results_rank:
@@ -353,17 +407,47 @@ def student_dashboard(request):
             user_rank = index + 1
             break
 
-    # 9. CONTEXT YUBORISH
+    for res in leaderboard:
+        student_obj = Student.objects.filter(
+            first_name=res.first_name,
+            last_name=res.last_name
+        ).first()
+        res.photo = student_obj.photo if student_obj else None
+
+    # Ixtiyoriy fanlar uchun o'chirish ruxsatini hisoblash
+    # now allaqachon yuqorida (7-qadamda) e'lon qilingan
+    optional_delete_status = {}  # { 'Ingliz tili': True/False }
+    if student.optional_subjects:
+        for sub in student.optional_subjects:
+            sub_rec = Student.objects.filter(
+                subject__iexact=sub,
+                grade=student.grade
+            ).first()
+            if sub_rec and sub_rec.exam_date and sub_rec.exam_time:
+                start_dt = timezone.make_aware(
+                    datetime.combine(sub_rec.exam_date, sub_rec.exam_time)
+                )
+                optional_delete_status[sub] = now < start_dt  # True = o'chirish mumkin
+            else:
+                optional_delete_status[sub] = True  # Vaqt yo'q → ruxsat
+
+    # 11. CONTEXT YUBORISH
     return render(request, 'html/dashboard.html', {
         'student': student,
         'user_rank': user_rank,
         'available_tests': available_tests,
         'student_results': results,
         'completed_count': completed_count,
+        'average_score': average_score,
+        'cert_count': cert_count,
         'leaderboard': leaderboard,
         'settings': settings,
         'all_other_subjects': all_other_subjects,
-        'main_tests': [t for t in available_tests if t.subject.lower() == student.subject.lower()],  # Majburiy fan
+        'main_subject_done': main_subject_done,
+        'main_subject_expired': main_subject_expired,
+        'main_test_unlocked': main_test_unlocked,
+        'optional_delete_status': json.dumps({k: v for k, v in optional_delete_status.items()}),
+        'main_tests': [t for t in available_tests if t.subject.lower() == student.subject.lower()],
         'optional_tests': [t for t in available_tests if t.subject.lower() != student.subject.lower()],
     })
 #======================================================================================================
@@ -668,6 +752,64 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 
+
+#======================================================================================================================
+
+#======================================================================================================================
+@login_required(login_url='login')
+def admin_update_username(request):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Metod xato'}, status=405)
+    try:
+        data = json.loads(request.body)
+        new_username = data.get('username', '').strip()
+        if not new_username:
+            return JsonResponse({'status': 'error', 'message': 'Username bosh bolmasin'})
+        from django.contrib.auth.models import User
+        if User.objects.filter(username=new_username).exclude(id=request.user.id).exists():
+            return JsonResponse({'status': 'error', 'message': 'Bu username band'})
+        request.user.username = new_username
+        request.user.save()
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+#======================================================================================================================
+
+def change_student_password(request):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Metod xato'}, status=405)
+
+    student_id = request.session.get('student_id')
+    if not student_id:
+        return JsonResponse({'status': 'error', 'message': 'Tizimga kirmagansiz'}, status=401)
+
+    try:
+        data = json.loads(request.body)
+        current_password = data.get('current_password', '').strip()
+        new_password     = data.get('new_password', '').strip()
+
+        student = Student.objects.get(id=student_id)
+
+        # Joriy parol tekshirish
+        if student.password != current_password:
+            return JsonResponse({'status': 'error', 'message': "Joriy parol noto\'g\'ri"})
+
+        # Uzunlik tekshirish
+        if len(new_password) < 6:
+            return JsonResponse({'status': 'error', 'message': "Parol kamida 6 ta belgidan iborat bo\'lishi kerak"})
+
+        # Saqlash
+        student.password = new_password
+        student.save()
+
+        return JsonResponse({'status': 'success', 'message': "Parol muvaffaqiyatli o\'zgartirildi!"})
+
+    except Student.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': "O\'quvchi topilmadi"}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+#======================================================================================================================
+
 def update_profile_photo(request):
     if request.method == 'POST' and request.FILES.get('profile_photo'):
         student_id = request.session.get('student_id')
@@ -685,20 +827,336 @@ def update_profile_photo(request):
             return JsonResponse({'status': 'success', 'url': student.photo.url})
 
     return JsonResponse({'status': 'error', 'message': 'Rasm yuklanmadi'}, status=400)
+#======================================================================================================================
+# SERTIFIKAT GENERATSIYA — HTML → PNG (Playwright)
+#======================================================================================================================
 
+def generate_certificate(request, result_id):
+    """
+    index.html stilidagi sertifikatni PNG formatda yuklash.
+    Rank 1/2/3 bo'lsa award-place yoziladi.
+    Faqat 80%+ uchun ishlaydi.
+    """
+    from django.http import HttpResponseForbidden, HttpResponseBadRequest
+    from playwright.sync_api import sync_playwright
+    import re
 
+    # 1. Natijani olish
+    result = get_object_or_404(TestResult, id=result_id)
 
+    # 2. Xavfsizlik: faqat o'z sertifikati
+    student_id = request.session.get('student_id')
+    if student_id:
+        student = Student.objects.filter(id=student_id).first()
+        if student and (student.first_name != result.first_name or student.last_name != result.last_name):
+            return HttpResponseForbidden("Bu sertifikat sizniki emas.")
 
+    # 3. Minimal ball
+    if result.score_percent < 80:
+        return HttpResponseBadRequest("Sertifikat olish uchun 80% kerak.")
 
+    # 3b. Vaqt tekshiruvi — test muddati tugaganidan keyin sertifikat beriladi
+    settings_obj = SystemSettings.objects.filter(id=1).first()
+    duration_min  = settings_obj.test_duration if settings_obj else 60
+    now = timezone.localtime(timezone.now())
 
+    # Shu fanga tegishli o'quvchi yozuvidan exam_date/exam_time ni olamiz
+    cert_student_id = request.session.get('student_id')
+    cert_student = Student.objects.filter(id=cert_student_id).first() if cert_student_id else None
+    grade = cert_student.grade if cert_student else None
 
+    sub_record = Student.objects.filter(
+        subject__iexact=result.subject,
+        grade=grade
+    ).first() if grade else None
 
+    if sub_record and sub_record.exam_date and sub_record.exam_time:
+        start_dt = timezone.make_aware(
+            datetime.combine(sub_record.exam_date, sub_record.exam_time)
+        )
+        end_dt = start_dt + timedelta(minutes=duration_min)
+        if now < end_dt:
+            remaining = end_dt - now
+            mins = int(remaining.total_seconds() // 60)
+            secs = int(remaining.total_seconds() % 60)
+            return HttpResponseBadRequest(
+                f"Sertifikat test muddati tugagandan keyin yuklab olinadi. "
+                f"Qolgan vaqt: {mins} daqiqa {secs} soniya."
+            )
 
+    # 4. Rank hisoblash
+    all_results_rank = TestResult.objects.filter(
+        subject__iexact=result.subject
+    ).order_by('-score_percent', 'date_taken')
 
+    leaderboard = []
+    seen = set()
+    for r in all_results_rank:
+        name = f"{r.first_name} {r.last_name}"
+        if name not in seen:
+            leaderboard.append(r)
+            seen.add(name)
 
+    user_rank = None
+    for i, r in enumerate(leaderboard):
+        if r.first_name == result.first_name and r.last_name == result.last_name:
+            user_rank = i + 1
+            break
 
+    rank_labels = {1: "1-O'rin", 2: "2-O'rin", 3: "3-O'rin"}
+    rank_text = rank_labels.get(user_rank, "")
 
+    # 5. Sana formatlash
+    date_str = result.date_taken.strftime("%d.%m.%Y") if hasattr(result.date_taken, 'strftime') else str(result.date_taken)
+    full_name = f"{result.first_name} {result.last_name}"
+    score_val = round(result.score_percent)
 
+    # 6. HTML sertifikat shabloni (index.html stili)
+    award_place_html = f'<div class="award-place">{rank_text}</div>' if rank_text else ''
 
+    html = f"""<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sertifikat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Great+Vibes&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {{
+            font-family: 'Inter', sans-serif;
+            background-color: #2c3e50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+            width: 960px;
+            height: 690px;
+        }}
+        #certificate-content {{
+            width: 900px;
+            height: 630px;
+            background: #fff;
+            padding: 30px;
+            position: relative;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }}
+        #certificate-content::before {{
+            content: "EduOlimp EduOlimp EduOlimp";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            font-size: 150px;
+            font-weight: 900;
+            color: rgba(37, 99, 235, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: rotate(-30deg);
+            z-index: 0;
+        }}
+        .cert-outer-border {{
+            border: 2px solid #d97706;
+            height: 100%;
+            position: relative;
+            z-index: 1;
+            padding: 10px;
+            box-sizing: border-box;
+        }}
+        .cert-inner-border {{
+            border: 15px solid #1e3a8a;
+            height: 100%;
+            position: relative;
+            box-sizing: border-box;
+            background: #fff;
+        }}
+        .corner-deco {{
+            position: absolute;
+            width: 80px; height: 80px;
+            border-color: #f59e0b;
+            border-style: solid;
+            z-index: 2;
+        }}
+        .top-left    {{ top: -5px;    left: -5px;  border-width: 10px 0 0 10px; }}
+        .top-right   {{ top: -5px;    right: -5px; border-width: 10px 10px 0 0; }}
+        .bottom-left {{ bottom: -5px; left: -5px;  border-width: 0 0 10px 10px; }}
+        .bottom-right{{ bottom: -5px; right: -5px; border-width: 0 10px 10px 0; }}
+        .cert-body {{
+            text-align: center;
+            padding: 50px;
+            height: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }}
+        .cert-logo {{ font-size: 28px; font-weight: 800; color: #1e3a8a; margin-bottom: 5px; }}
+        .cert-logo span {{ color: #f59e0b; }}
+        .cert-title {{
+            font-family: 'Cinzel', serif;
+            font-size: 65px;
+            color: #1e3a8a;
+            margin: 0;
+            letter-spacing: 10px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }}
+        .cert-award-to {{
+            font-size: 20px;
+            color: #6b7280;
+            margin: 15px 0 5px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }}
+        .cert-user-name {{
+            font-family: 'Cinzel', serif;
+            font-size: 38px;
+            color: #2563eb;
+            margin: 0 0 10px 0;
+            font-weight: 700;
+            border-bottom: 1px solid #eee;
+            display: inline-block;
+            padding: 0 50px;
+        }}
+        .award-place {{
+            font-family: 'Cinzel', serif;
+            font-size: 20px;
+            color: #d97706;
+            font-weight: 700;
+            margin-top: -5px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            position: relative;
+        }}
+        .award-place::before, .award-place::after {{
+            content: "";
+            display: inline-block;
+            width: 40px;
+            height: 2px;
+            background: #d97706;
+            vertical-align: middle;
+            margin: 0 15px;
+        }}
+        .cert-description {{
+            font-size: 17px;
+            color: #4b5563;
+            line-height: 1.7;
+            margin: 0 auto;
+            max-width: 85%;
+        }}
+        .cert-footer {{
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 20px;
+            padding: 0 30px;
+            position: relative;
+        }}
+        .footer-item {{ text-align: center; width: 180px; }}
+        .footer-item p {{ margin: 0; font-weight: bold; font-size: 15px; color: #1e3a8a; }}
+        .footer-item span {{
+            display: block;
+            border-top: 1px solid #ccc;
+            font-size: 12px;
+            margin-top: 8px;
+            color: #6b7280;
+            text-transform: uppercase;
+        }}
+        .signature-text {{
+            font-family: 'Great Vibes', cursive;
+            font-size: 28px;
+            color: #1e3a8a;
+            margin-bottom: -5px;
+        }}
+        .stamp-container {{
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px; height: 80px;
+            background: radial-gradient(circle, #f1c40f 0%, #f39c12 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: bold;
+            font-size: 11px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            border: 4px solid #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            z-index: 3;
+        }}
+        .stamp-container::after {{
+            content: "★ ★ ★";
+            position: absolute;
+            bottom: 10px;
+            font-size: 8px;
+        }}
+    </style>
+</head>
+<body>
+    <div id="certificate-content">
+        <div class="cert-outer-border">
+            <div class="cert-inner-border">
+                <div class="corner-deco top-left"></div>
+                <div class="corner-deco top-right"></div>
+                <div class="corner-deco bottom-left"></div>
+                <div class="corner-deco bottom-right"></div>
+                <div class="cert-body">
+                    <div class="cert-header">
+                        <div class="cert-logo">Edu<span>Olimp</span></div>
+                        <p style="margin:0; font-size:13px; color:#6b7280; text-transform:uppercase; letter-spacing:1px;">Elektron Olimpiada Tizimi</p>
+                    </div>
+                    <h1 class="cert-title">SERTIFIKAT</h1>
+                    <p class="cert-award-to">Muvaffaqiyatli ishtirok uchun topshiriladi:</p>
+                    <h2 class="cert-user-name">{full_name}</h2>
+                    {award_place_html}
+                    <p class="cert-description">
+                        Ushbu hujjat egasi <strong style="color:#1e3a8a;">{result.subject}</strong>
+                        fani bo'yicha o'tkazilgan umumrespublika onlayn olimpiadasida faol ishtirok etib,
+                        yuqori bilim va ko'nikmalarini namoyish etdi.
+                        <strong style="color:#d97706; font-size:20px;">{score_val}%</strong>
+                        natija qayd etgani munosabati bilan taqdirlanadi.
+                    </p>
+                    <div class="cert-footer">
+                        <div class="footer-item">
+                            <p>{date_str}</p>
+                            <span>Sana</span>
+                        </div>
+                        <div class="stamp-container">
+                            Olimpiada<br>G'olibi<br>2026
+                        </div>
+                        <div class="footer-item">
+                            <p class="signature-text">EduOlimp</p>
+                            <span>Tashkilotchi Imzosi</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>"""
 
+    # 7. Playwright orqali PNG generatsiya
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(viewport={"width": 960, "height": 690})
+        page.set_content(html, wait_until="networkidle")
+        # Faqat sertifikat elementini screenshot qilish
+        element = page.locator("#certificate-content")
+        png_bytes = element.screenshot(type="png")
+        browser.close()
 
+    # 8. PNG response
+    response = HttpResponse(png_bytes, content_type='image/png')
+    safe_name = f"EduOlimp_Sertifikat_{full_name.replace(' ', '_')}_{result.subject}.png"
+    response['Content-Disposition'] = f'attachment; filename="{safe_name}"'
+    return response
+
+#======================================================================================================================

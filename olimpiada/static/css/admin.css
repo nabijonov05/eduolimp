@@ -584,3 +584,393 @@ input:focus, select:focus, .form-group input:focus {
 
 
 
+
+
+/* ============================================================
+   SETTINGS SECTION — YANGI DIZAYN
+   ============================================================ */
+
+/* Alert xabarlar */
+.stng-alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 10px;
+    animation: slideDown 0.3s ease;
+}
+.stng-alert-success { background:#dcfce7; color:#166534; border:1px solid #bbf7d0; }
+.stng-alert-error, .stng-alert-warning { background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
+
+@keyframes slideDown {
+    from { opacity:0; transform:translateY(-8px); }
+    to   { opacity:1; transform:translateY(0); }
+}
+
+/* 4-kartochkali grid */
+.stng-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    padding: 4px 2px;
+}
+
+@media (max-width: 1100px) {
+    .stng-grid { grid-template-columns: 1fr; }
+}
+
+/* Kartochka */
+.stng-card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 4px 24px rgba(67,97,238,0.07);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.25s, box-shadow 0.25s;
+    border: 1px solid #f0f2f8;
+}
+.stng-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(67,97,238,0.12);
+}
+
+/* Kartochka tepa banner */
+.stng-card-icon {
+    padding: 22px 28px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+}
+.stng-card-icon::after {
+    content: '';
+    position: absolute;
+    right: -20px; top: -20px;
+    width: 100px; height: 100px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+}
+.stng-card-icon i {
+    font-size: 26px;
+    color: white;
+    z-index: 1;
+}
+
+/* Kartochka body */
+.stng-card-body {
+    padding: 24px 28px 28px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.stng-card-body h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+.stng-desc {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-bottom: 22px;
+}
+
+/* Form ichidagi maydonlar */
+.stng-form { display: flex; flex-direction: column; gap: 0; flex: 1; }
+
+.stng-field {
+    margin-bottom: 16px;
+}
+.stng-field label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 7px;
+    letter-spacing: 0.3px;
+}
+.stng-field label i { color: #94a3b8; margin-right: 4px; }
+
+/* Input wrap (unit bilan) */
+.stng-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.stng-input-wrap input {
+    width: 100%;
+    padding: 11px 48px 11px 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    background: #f8fafc;
+    outline: none;
+    transition: 0.2s;
+}
+.stng-input-wrap input:focus {
+    border-color: #4361ee;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(67,97,238,0.1);
+}
+.stng-unit {
+    position: absolute;
+    right: 14px;
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 600;
+    pointer-events: none;
+}
+
+/* Inline tugma (username uchun) */
+.stng-inline-btn {
+    position: absolute;
+    right: 8px;
+    background: #4361ee;
+    color: white;
+    border: none;
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    transition: 0.2s;
+}
+.stng-inline-btn:hover { background: #3a0ca3; }
+.stng-field-msg { font-size: 12px; margin-top: 4px; display: block; }
+
+/* Select wrap */
+.stng-select-wrap {
+    position: relative;
+}
+.stng-select-wrap select {
+    width: 100%;
+    padding: 11px 40px 11px 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    background: #f8fafc;
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.stng-select-wrap select:focus {
+    border-color: #4361ee;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(67,97,238,0.1);
+}
+.stng-select-arrow {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 12px;
+    pointer-events: none;
+}
+
+/* Parol input wrap */
+.stng-pwd-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.stng-pwd-wrap input {
+    width: 100%;
+    padding: 11px 44px 11px 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    background: #f8fafc;
+    outline: none;
+    transition: 0.2s;
+}
+.stng-pwd-wrap input:focus {
+    border-color: #f72585;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(247,37,133,0.1);
+}
+.stng-eye {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    font-size: 14px;
+    padding: 0;
+    transition: 0.2s;
+}
+.stng-eye:hover { color: #475569; }
+
+/* Parol kuchi */
+.stng-strength-bar {
+    height: 4px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+.stng-strength-bar div {
+    height: 100%;
+    width: 0;
+    border-radius: 4px;
+    transition: width 0.3s, background 0.3s;
+}
+.stng-strength-label {
+    font-size: 11px;
+    margin-top: 4px;
+    display: block;
+}
+
+/* Tugmalar */
+.stng-btn {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: auto;
+    transition: 0.25s;
+    letter-spacing: 0.3px;
+}
+.stng-btn-primary { background: linear-gradient(135deg,#4361ee,#3a0ca3); color: white; }
+.stng-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(67,97,238,0.35); }
+.stng-btn-danger  { background: linear-gradient(135deg,#f72585,#b5179e); color: white; }
+.stng-btn-danger:hover  { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(247,37,133,0.35); }
+
+/* Toggle switch (dark mode) */
+.stng-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1.5px solid #e2e8f0;
+}
+.stng-toggle-info { display: flex; flex-direction: column; gap: 3px; }
+.stng-toggle-title { font-size: 14px; font-weight: 600; color: #1e293b; }
+.stng-toggle-title i { margin-right: 6px; color: #7c3aed; }
+.stng-toggle-sub { font-size: 12px; color: #94a3b8; }
+
+.stng-switch { position: relative; display: inline-block; width: 48px; height: 26px; flex-shrink: 0; }
+.stng-switch input { opacity: 0; width: 0; height: 0; }
+.stng-slider {
+    position: absolute; inset: 0;
+    background: #e2e8f0;
+    border-radius: 26px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.stng-slider::before {
+    content: '';
+    position: absolute;
+    width: 20px; height: 20px;
+    left: 3px; bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.3s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+.stng-switch input:checked + .stng-slider { background: #7c3aed; }
+.stng-switch input:checked + .stng-slider::before { transform: translateX(22px); }
+
+/* Til tugmalari */
+.stng-lang-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 4px;
+}
+.stng-lang-btn {
+    padding: 10px 8px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: 0.2s;
+}
+.stng-lang-btn:hover { border-color: #4361ee; color: #4361ee; background: #eef2ff; }
+.stng-lang-btn.active { background: #4361ee; color: white; border-color: #4361ee; }
+.stng-flag { font-size: 16px; }
+
+/* Admin profil box */
+.stng-profile-box {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    padding: 16px;
+    border-radius: 14px;
+    border: 1px solid #bbf7d0;
+}
+.stng-avatar {
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg,#06d6a0,#118ab2);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.stng-avatar i { color: white; font-size: 22px; }
+.stng-profile-name { font-size: 16px; font-weight: 700; color: #1e293b; }
+.stng-profile-role { font-size: 12px; color: #10b981; font-weight: 600; margin: 2px 0 6px; }
+.stng-profile-meta { display: flex; gap: 12px; font-size: 11px; color: #64748b; }
+.stng-profile-meta span { display: flex; align-items: center; gap: 4px; }
+
+/* Info grid */
+.stng-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 16px;
+}
+.stng-info-item {
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #f1f5f9;
+}
+.stng-info-label { display: block; font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.stng-info-val { font-size: 13px; font-weight: 600; color: #1e293b; }
+
+/* DARK MODE */
+body.admin-dark {
+    background: #0f172a;
+    color: #e2e8f0;
+}
+body.admin-dark .stng-card { background: #1e293b; border-color: #334155; }
+body.admin-dark .stng-card-body h3 { color: #f1f5f9; }
+body.admin-dark .stng-desc { color: #64748b; }
+body.admin-dark .stng-field label { color: #94a3b8; }
+body.admin-dark .stng-input-wrap input,
+body.admin-dark .stng-pwd-wrap input,
+body.admin-dark .stng-select-wrap select { background: #0f172a; border-color: #334155; color: #f1f5f9; }
+body.admin-dark .stng-toggle-row { background: #0f172a; border-color: #334155; }
+body.admin-dark .stng-lang-btn { background: #0f172a; border-color: #334155; color: #94a3b8; }
+body.admin-dark .stng-lang-btn.active { background: #4361ee; color: white; }
+body.admin-dark .stng-profile-box { background: linear-gradient(135deg,#064e3b,#065f46); border-color: #059669; }
+body.admin-dark .stng-info-item { background: #0f172a; border-color: #334155; }
+body.admin-dark .stng-info-val { color: #f1f5f9; }
+body.admin-dark .top-bar,
+body.admin-dark .admin-main { background: #0f172a; }
+body.admin-dark .form-card,
+body.admin-dark .results-card { background: #1e293b; color: #f1f5f9; }

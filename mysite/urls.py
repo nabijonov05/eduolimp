@@ -43,4 +43,7 @@ urlpatterns = [
 
   path('students/bulk-update/', views.bulk_update_students, name='bulk_update_students'),
   path('update-profile-photo/', views.update_profile_photo, name='update_profile_photo'),
+  path('change-student-password/', views.change_student_password, name='change_student_password'),
+  path('admin-update-username/', views.admin_update_username, name='admin_update_username'),
+  path('generate-certificate/<int:result_id>/', views.generate_certificate, name='generate_certificate'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -229,7 +229,7 @@
                             <span>Fizika</span>
                         </div>
                         <div class="subject-card" onclick="selectSubject('Ona tili', this)">
-                            <i class="fas fa-book"></i>
+                            <i class="fas fa-pen-nib"></i>
                             <span>Ona tili</span>
                         </div>
                         <div class="subject-card" onclick="selectSubject('Ingliz tili', this)">
@@ -242,12 +242,12 @@
                         </div>
 
                         <div class="subject-card" onclick="selectSubject('Tarix', this)">
-                            <i class="fas fa-history"></i>
+                            <i class="fas fa-landmark"></i>
                             <span>Tarix</span>
                         </div>
 
                         <div class="subject-card" onclick="selectSubject('Rus tili', this)">
-                            <i class="fas fa-language"></i> <span>Rus tili</span>
+                            <i class="fas fa-font">Я</i> <span>Rus tili</span>
                         </div>
                     </div>
                     <form id="test-upload-form" method="POST" action="{% url 'upload_test' %}" enctype="multipart/form-data">
@@ -498,79 +498,190 @@
 
 
             <section id="settings-section" class="admin-section" style="display: none;">
-                <div class="settings-main-container">
 
-                    <div class="settings-card-mini">
-                        <div class="card-header-mini">
-                            <h3><i class="fas fa-vials"></i> Test Parametrlari</h3>
-                            <p>Olimpiada tartibi va vaqti</p>
+                <!-- Django messages -->
+                {% if messages %}
+                <div id="settings-messages" style="margin-bottom:20px;">
+                    {% for message in messages %}
+                    <div class="stng-alert stng-alert-{{ message.tags }}">
+                        <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                        {{ message }}
+                        <button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;margin-left:auto;font-size:16px;opacity:0.6;">×</button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="stng-grid">
+
+                    <!-- ① Test sozlamalari -->
+                    <div class="stng-card">
+                        <div class="stng-card-icon" style="background:linear-gradient(135deg,#4361ee,#3a0ca3);">
+                            <i class="fas fa-sliders-h"></i>
                         </div>
-                        <form id="test-config-form" method="POST" action="{% url 'update_settings' %}">
-                            {% csrf_token %}
-                            <div class="form-content">
-                                <div class="form-group-mini">
+                        <div class="stng-card-body">
+                            <h3>Test sozlamalari</h3>
+                            <p class="stng-desc">Olimpiada parametrlari va vaqtini boshqaring</p>
+                            <form method="POST" action="{% url 'update_settings' %}" class="stng-form">
+                                {% csrf_token %}
+                                <div class="stng-field">
                                     <label><i class="fas fa-list-ol"></i> Savollar soni</label>
-                                    <input type="number" name="total_questions" value="{{ settings.total_questions }}">
+                                    <div class="stng-input-wrap">
+                                        <input type="number" name="total_questions" value="{{ settings.total_questions }}" min="5" max="100" placeholder="25">
+                                        <span class="stng-unit">ta</span>
+                                    </div>
                                 </div>
-                                <div class="form-group-mini">
-                                    <label><i class="fas fa-clock"></i> Vaqt (daqiqa)</label>
-                                    <input type="number" name="test_duration" value="{{ settings.test_duration }}">
+                                <div class="stng-field">
+                                    <label><i class="fas fa-stopwatch"></i> Test vaqti</label>
+                                    <div class="stng-input-wrap">
+                                        <input type="number" name="test_duration" value="{{ settings.test_duration }}" min="10" max="240" placeholder="60">
+                                        <span class="stng-unit">min</span>
+                                    </div>
                                 </div>
-                                <div class="form-group-mini">
-                                    <label><i class="fas fa-star"></i> Har bir savol uchun ball</label>
-                                    <select name="default_points">
-                                        <option value="2" {% if settings.default_points == 2 %}selected{% endif %}>2 ball</option>
-                                        <option value="4" {% if settings.default_points == 4 %}selected{% endif %}>4 ball</option>
-                                        <option value="5" {% if settings.default_points == 5 %}selected{% endif %}>5 ball</option>
-                                        <option value="10" {% if settings.default_points == 10 %}selected{% endif %}>10 ball</option>
-                                    </select>
+                                <div class="stng-field">
+                                    <label><i class="fas fa-star"></i> Har savol uchun ball</label>
+                                    <div class="stng-select-wrap">
+                                        <select name="default_points">
+                                            <option value="2" {% if settings.default_points == 2 %}selected{% endif %}>2 ball</option>
+                                            <option value="4" {% if settings.default_points == 4 %}selected{% endif %}>4 ball</option>
+                                            <option value="5" {% if settings.default_points == 5 %}selected{% endif %}>5 ball</option>
+                                            <option value="10" {% if settings.default_points == 10 %}selected{% endif %}>10 ball</option>
+                                        </select>
+                                        <i class="fas fa-chevron-down stng-select-arrow"></i>
+                                    </div>
                                 </div>
-                            </div>
-                            <button type="submit" class="btn-save-mini">
-                                <i class="fas fa-save"></i> Saqlash
-                            </button>
-                        </form>
+                                <button type="submit" class="stng-btn stng-btn-primary">
+                                    <i class="fas fa-save"></i> Saqlash
+                                </button>
+                            </form>
+                        </div>
                     </div>
 
-                    <div class="settings-card-mini">
-                        <div style="margin: 0 20px;">
-                            {% if messages %}
-                                {% for message in messages %}
-                                    <div class="alert alert-{{ message.tags }}" style="padding: 15px; margin-bottom: 20px; border-radius: 12px; font-weight: 500; display: flex; align-items: center; gap: 10px; background: {% if message.tags == 'success' %}#dcfce7; color: #166534; border: 1px solid #bbf7d0;{% else %}#fee2e2; color: #991b1b; border: 1px solid #fecaca;{% endif %};">
-                                        {% if message.tags == 'success' %}
-                                            <i class="fas fa-check-circle"></i>
-                                        {% else %}
-                                            <i class="fas fa-exclamation-circle"></i>
-                                        {% endif %}
-                                        {{ message }}
+                    <!-- ② Admin parol -->
+                    <div class="stng-card">
+                        <div class="stng-card-icon" style="background:linear-gradient(135deg,#f72585,#b5179e);">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="stng-card-body">
+                            <h3>Admin xavfsizligi</h3>
+                            <p class="stng-desc">Admin hisobining parolini yangilang</p>
+                            <form method="POST" action="{% url 'admin_dashboard' %}" class="stng-form" id="admin-pwd-form">
+                                {% csrf_token %}
+                                <div class="stng-field">
+                                    <label><i class="fas fa-lock"></i> Joriy parol</label>
+                                    <div class="stng-pwd-wrap">
+                                        <input type="password" name="current_password" placeholder="••••••••" required>
+                                        <button type="button" class="stng-eye" onclick="toggleAdminPwd(this)"><i class="fas fa-eye"></i></button>
                                     </div>
-                                {% endfor %}
-                            {% endif %}
-                        </div>
-                        <div class="card-header-mini">
-                            <h3><i class="fas fa-user-shield"></i> Admin Xavfsizligi</h3>
-                            <p>Parolni yangilash bo'limi</p>
-                        </div>
-                        <form id="admin-password-form" method="POST" action="{% url 'admin_dashboard' %}">
-                            {% csrf_token %}
-                            <div class="form-content">
-                                <div class="form-group-mini">
-                                    <label>Joriy parol</label>
-                                    <input type="password" name="current_password" placeholder="********" required>
                                 </div>
-                                <div class="form-group-mini">
-                                    <label>Yangi parol</label>
-                                    <input type="password" name="new_password" placeholder="Yangi parol" required>
+                                <div class="stng-field">
+                                    <label><i class="fas fa-key"></i> Yangi parol</label>
+                                    <div class="stng-pwd-wrap">
+                                        <input type="password" name="new_password" placeholder="Yangi parol" required oninput="adminPwdStrength(this.value)">
+                                        <button type="button" class="stng-eye" onclick="toggleAdminPwd(this)"><i class="fas fa-eye"></i></button>
+                                    </div>
+                                    <div class="stng-strength-bar"><div id="admin-strength-fill"></div></div>
+                                    <span id="admin-strength-text" class="stng-strength-label"></span>
                                 </div>
-                                <div class="form-group-mini">
-                                    <label>Parolni tasdiqlash</label>
-                                    <input type="password" name="confirm_password" placeholder="Qayta kiriting" required>
+                                <div class="stng-field">
+                                    <label><i class="fas fa-check-double"></i> Tasdiqlash</label>
+                                    <div class="stng-pwd-wrap">
+                                        <input type="password" name="confirm_password" placeholder="Qayta kiriting" required>
+                                        <button type="button" class="stng-eye" onclick="toggleAdminPwd(this)"><i class="fas fa-eye"></i></button>
+                                    </div>
+                                </div>
+                                <button type="submit" class="stng-btn stng-btn-danger">
+                                    <i class="fas fa-key"></i> Parolni yangilash
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- ③ Interfeys -->
+                    <div class="stng-card">
+                        <div class="stng-card-icon" style="background:linear-gradient(135deg,#4cc9f0,#4361ee);">
+                            <i class="fas fa-paint-brush"></i>
+                        </div>
+                        <div class="stng-card-body">
+                            <h3>Interfeys sozlamalari</h3>
+                            <p class="stng-desc">Ko'rinish va til parametrlarini sozlang</p>
+
+                            <!-- Dark mode toggle -->
+                            <div class="stng-toggle-row">
+                                <div class="stng-toggle-info">
+                                    <span class="stng-toggle-title"><i class="fas fa-moon"></i> Tungi rejim</span>
+                                    <span class="stng-toggle-sub">Qorong'i interfeys</span>
+                                </div>
+                                <label class="stng-switch">
+                                    <input type="checkbox" id="admin-dark-toggle" onchange="toggleAdminDark(this.checked)">
+                                    <span class="stng-slider"></span>
+                                </label>
+                            </div>
+
+                            <!-- Language -->
+                            <div class="stng-field" style="margin-top:20px;">
+                                <label><i class="fas fa-language"></i> Interfeys tili</label>
+                                <div class="stng-lang-grid">
+                                    <button class="stng-lang-btn active" id="lang-uz" onclick="setAdminLang('uz', this)">
+                                        <span class="stng-flag">🇺🇿</span> O'zbek
+                                    </button>
+                                    <button class="stng-lang-btn" id="lang-ru" onclick="setAdminLang('ru', this)">
+                                        <span class="stng-flag">🇷🇺</span> Русский
+                                    </button>
+                                    <button class="stng-lang-btn" id="lang-en" onclick="setAdminLang('en', this)">
+                                        <span class="stng-flag">🇬🇧</span> English
+                                    </button>
                                 </div>
                             </div>
-                            <button type="submit" class="btn-save-mini secondary">
-                                <i class="fas fa-key"></i> Prolni yangilash
-                            </button>
-                        </form>
+                        </div>
+                    </div>
+
+                    <!-- ④ Admin profil -->
+                    <div class="stng-card">
+                        <div class="stng-card-icon" style="background:linear-gradient(135deg,#06d6a0,#118ab2);">
+                            <i class="fas fa-user-cog"></i>
+                        </div>
+                        <div class="stng-card-body">
+                            <h3>Admin profili</h3>
+                            <p class="stng-desc">Tizimga kirish ma'lumotlari</p>
+
+                            <div class="stng-profile-box">
+                                <div class="stng-avatar">
+                                    <i class="fas fa-user-shield"></i>
+                                </div>
+                                <div class="stng-profile-info">
+                                    <div class="stng-profile-name">{{ request.user.username }}</div>
+                                    <div class="stng-profile-role">Administrator</div>
+                                    <div class="stng-profile-meta">
+                                        <span><i class="fas fa-circle" style="color:#10b981;font-size:8px;"></i> Faol sessiya</span>
+                                        <span><i class="fas fa-calendar-alt"></i> {{ request.user.last_login|date:"d.m.Y" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Username o'zgartirish -->
+                            <div class="stng-field" style="margin-top:20px;">
+                                <label><i class="fas fa-user"></i> Username</label>
+                                <div class="stng-input-wrap">
+                                    <input type="text" id="admin-username-input" value="{{ request.user.username }}" placeholder="admin">
+                                    <button class="stng-inline-btn" onclick="updateAdminUsername()">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </div>
+                                <span id="username-msg" class="stng-field-msg"></span>
+                            </div>
+
+                            <div class="stng-info-grid">
+                                <div class="stng-info-item">
+                                    <span class="stng-info-label">Email</span>
+                                    <span class="stng-info-val">{{ request.user.email|default:"—" }}</span>
+                                </div>
+                                <div class="stng-info-item">
+                                    <span class="stng-info-label">Oxirgi kirish</span>
+                                    <span class="stng-info-val">{{ request.user.last_login|date:"d.m.Y H:i" }}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                 </div>

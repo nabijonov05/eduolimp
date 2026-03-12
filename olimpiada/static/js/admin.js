@@ -395,3 +395,135 @@ document.getElementById('studentSearch')?.addEventListener('keyup', function() {
         }
     });
 });
+
+/* ============================================================
+   SETTINGS — ADMIN PANEL FUNKSIYALARI
+   ============================================================ */
+
+// --- Dark mode ---
+function toggleAdminDark(on) {
+    document.body.classList.toggle('admin-dark', on);
+    localStorage.setItem('adminDark', on ? '1' : '0');
+}
+
+// --- Parol ko'rsatish/yashirish ---
+function toggleAdminPwd(btn) {
+    const input = btn.previousElementSibling;
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+}
+
+// --- Parol kuchi ---
+function adminPwdStrength(val) {
+    const bar  = document.getElementById('admin-strength-fill');
+    const text = document.getElementById('admin-strength-text');
+    if (!bar) return;
+    let score = 0;
+    if (val.length >= 6) score++;
+    if (val.length >= 10) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    const levels = [
+        { w:'20%', c:'#ef4444', l:'Juda zaif' },
+        { w:'40%', c:'#f97316', l:'Zaif' },
+        { w:'60%', c:'#eab308', l:"O'rtacha" },
+        { w:'80%', c:'#22c55e', l:'Kuchli' },
+        { w:'100%',c:'#10b981', l:'Juda kuchli' },
+    ];
+    const lv = levels[Math.min(score - 1, 4)];
+    if (!val) { bar.style.width = '0'; text.textContent = ''; return; }
+    if (lv) {
+        bar.style.width = lv.w;
+        bar.style.background = lv.c;
+        text.textContent = lv.l;
+        text.style.color = lv.c;
+    }
+}
+
+// --- Til tanlash ---
+function setAdminLang(lang, btn) {
+    document.querySelectorAll('.stng-lang-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    localStorage.setItem('adminLang', lang);
+    // Sidebar link matnlarini o'zgartirish
+    const labels = {
+        uz: { dash:'Umumiy nazorat', test:"Yangi test qo'shish", users:'Foydalanuvchilar', analytics:'Analitika', settings:'Tizim sozlamalari' },
+        ru: { dash:'Общий контроль', test:'Добавить тест',       users:'Пользователи',     analytics:'Аналитика',  settings:'Настройки системы' },
+        en: { dash:'Dashboard',      test:'Add New Test',        users:'Users',            analytics:'Analytics',  settings:'System Settings' },
+    };
+    const l = labels[lang] || labels.uz;
+    const links = document.querySelectorAll('.admin-nav a');
+    const map = [l.dash, l.test, l.users, l.analytics, l.settings];
+    links.forEach((a, i) => {
+        const icon = a.querySelector('i');
+        if (icon && map[i]) a.innerHTML = icon.outerHTML + ' ' + map[i];
+    });
+}
+
+// --- Username yangilash (AJAX) ---
+async function updateAdminUsername() {
+    const input = document.getElementById('admin-username-input');
+    const msg = document.getElementById('username-msg');
+    const newUsername = input.value.trim();
+    if (!newUsername) { showUsernameMsg('Username bo\'sh bo\'lmasin', false); return; }
+
+    try {
+        const res = await fetch('/admin-update-username/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+            body: JSON.stringify({ username: newUsername })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+            showUsernameMsg('✓ Saqlandi', true);
+            document.querySelector('.stng-profile-name').textContent = newUsername;
+        } else {
+            showUsernameMsg(data.message || 'Xatolik', false);
+        }
+    } catch(e) {
+        showUsernameMsg('Server xatosi', false);
+    }
+}
+
+function showUsernameMsg(text, ok) {
+    const msg = document.getElementById('username-msg');
+    if (!msg) return;
+    msg.textContent = text;
+    msg.style.color = ok ? '#10b981' : '#ef4444';
+    setTimeout(() => { msg.textContent = ''; }, 3000);
+}
+
+function getCsrfToken() {
+    const cookie = document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='));
+    return cookie ? cookie.split('=')[1] : '';
+}
+
+// --- Sahifa yuklanganda holatni tiklash ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Dark mode
+    if (localStorage.getItem('adminDark') === '1') {
+        document.body.classList.add('admin-dark');
+        const toggle = document.getElementById('admin-dark-toggle');
+        if (toggle) toggle.checked = true;
+    }
+    // Til
+    const savedLang = localStorage.getItem('adminLang') || 'uz';
+    const langBtn = document.getElementById('lang-' + savedLang);
+    if (langBtn) {
+        document.querySelectorAll('.stng-lang-btn').forEach(b => b.classList.remove('active'));
+        langBtn.classList.add('active');
+        if (savedLang !== 'uz') setAdminLang(savedLang, langBtn);
+    }
+    // Messages auto-hide
+    setTimeout(() => {
+        const msgs = document.getElementById('settings-messages');
+        if (msgs) msgs.style.opacity = '0', msgs.style.transition = '0.5s', setTimeout(() => msgs.remove(), 500);
+    }, 5000);
+});
