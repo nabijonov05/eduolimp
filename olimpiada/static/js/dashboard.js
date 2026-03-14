@@ -210,7 +210,7 @@ function goToTest(section, subjectName) {
         allItems.forEach(item => {
             const subjectEl = item.querySelector('[data-subject-name]');
             if (subjectEl && subjectEl.getAttribute('data-subject-name') === subjectName) {
-                item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // scrollIntoView olib tashlandi — tepaga o'tmaydi
                 item.style.transition = 'box-shadow 0.3s, transform 0.3s';
                 item.style.boxShadow = '0 0 0 3px #3b82f680';
                 item.style.transform = 'scale(1.01)';
@@ -474,7 +474,7 @@ function renderQuestion() {
         } else {
             if (userAnswers[i] || userAnswers[String(i)]) cls += " answered";
         }
-        navHtml += `<div class="nav-box ${cls}" onclick="jumpToQuestion(${i})">${i}</div>`;
+        navHtml += `<div class="nav-box ${cls}" onclick="jumpToQuestion(${i});return false;">${i}</div>`;
     }
     navHtml += `</div></div>`;
 
@@ -528,6 +528,19 @@ function selectOption(val) {
 function jumpToQuestion(n) {
     currentQuestion = n;
     renderQuestion();
+    // Savol mazmuniga scroll (tepaga emas)
+    var area = document.getElementById('questionArea');
+    if (area) {
+        area.scrollTop = 0;
+        // Test container scroll ham tepaga — savol ko'rinsin
+        var container = document.querySelector('.test-container');
+        if (container) {
+            var contentEl = container.querySelector('.test-content');
+            if (contentEl) contentEl.scrollTop = 0;
+        }
+    }
+    // Window scroll bloklash (test modal ochiq)
+    return false;
 }
 
 function changeQuestion(step) {

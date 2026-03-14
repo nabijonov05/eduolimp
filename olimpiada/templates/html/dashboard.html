@@ -32,11 +32,11 @@
         <main class="main-content">
             <header class="top-bar">
                 <div class="ham-placeholder" aria-hidden="true"></div>
-                <div class="search-box">
+                <div class="search-box" id="topbarSearch">
                     <i class="fas fa-search"></i>
                     <input type="text" id="globalSearchInput" placeholder="Testlarni izlash..." data-i18n="search-ph" oninput="globalSearch(this.value)" autocomplete="off">
                 </div>
-                <div class="user-profile-wrapper" style="display:flex;align-items:center;">
+                <div class="user-profile-wrapper">
                     <div class="user-profile-trigger" onclick="toggleUserMenu(event)">
                         <div class="user-avatar-mini">
                             {% if student.photo %}
@@ -535,11 +535,11 @@
                                 <i class="fas fa-microchip" style="color: #3b82f6;"></i> <span data-i18n="skill-level">Bilim darajasi</span>
                             </h3>
 
-                            <div style="position: relative; height: 180px; display: flex; justify-content: center; align-items: center;">
+                            <div class="skill-chart-wrap" style="position: relative; display: flex; justify-content: center; align-items: center;">
 
                                 <div class="pulse-ring" style="position: absolute; width: 140px; height: 140px; border-radius: 50%; border: 2px solid #3b82f61a; animation: pulse 2s infinite;"></div>
 
-                                <div style="width: 150px; height: 150px; z-index: 2; flex-shrink: 0;">
+                                <div style="width: 160px; height: 160px; z-index: 2; flex-shrink: 0;">
                                     <canvas id="skillChart"></canvas>
                                 </div>
 
