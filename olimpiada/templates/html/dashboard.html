@@ -9,10 +9,12 @@
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 </head>
 <body>
+    <button class="d-ham" id="dHam" onclick="dToggle()"><span></span><span></span><span></span></button>
+    <div class="d-ov" id="dOv" onclick="dClose()"></div>
     <div class="dashboard-container">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <i class="fas fa-graduation-cap"></i>Edu<span>Olimp</span>
+                <i class="fas fa-graduation-cap"></i><span class="logo-txt">Edu<span>Olimp</span></span>
             </div>
             <nav class="sidebar-nav">
                 <a href="javascript:void(0)" onclick="loadTab('home')" class="active"><i class="fas fa-home"></i> <span data-i18n="nav-home">Asosiy panel</span></a>
@@ -29,11 +31,12 @@
 
         <main class="main-content">
             <header class="top-bar">
+                <div class="ham-placeholder" aria-hidden="true"></div>
                 <div class="search-box">
                     <i class="fas fa-search"></i>
                     <input type="text" id="globalSearchInput" placeholder="Testlarni izlash..." data-i18n="search-ph" oninput="globalSearch(this.value)" autocomplete="off">
                 </div>
-                <div class="user-profile-wrapper">
+                <div class="user-profile-wrapper" style="display:flex;align-items:center;">
                     <div class="user-profile-trigger" onclick="toggleUserMenu(event)">
                         <div class="user-avatar-mini">
                             {% if student.photo %}
@@ -265,8 +268,8 @@
                         </div>
                         <div class="recent-results">
                             <div class="section-header"><h2 data-i18n="latest-results">Latest Results</h2></div>
-                            <div class="table-responsive" style="margin-top: 15px;">
-                                <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden;">
+                            <div class="table-responsive" style="margin-top: 15px; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                                <table style="width: 100%; min-width: 480px; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden;">
                                     <thead style="background: #f8fafc; text-align: left;">
                                         <tr>
                                             <th style="padding: 12px;" data-i18n="th-fullname">Full Name</th>
@@ -298,7 +301,7 @@
                         </div>
                     </div>
                 </section>
-                <section id="my-tests" class="content-body" style="display: none; padding: 20px;">
+                <section id="my-tests" class="content-body">
                     <div class="page-header" style="margin-bottom: 30px;">
                         <h2 style="font-size: 24px; color: black; font-weight: 700;">
                             <i class="fas fa-layer-group" style="color: #4f46e5; margin-right: 12px;"></i><span data-i18n="my-tests-title">Mening barcha testlarim</span>
@@ -320,9 +323,7 @@
                             {% if available_tests %}
                                 <div style="display: grid; gap: 15px;">
                                     {% for test in available_tests %}
-                                    <div class="test-row-item" style="display: flex; justify-content: space-between; align-items: center; padding: 18px; background: white; border-radius: 15px; border: 1px solid #f1f5f9; transition: 0.3s;"
-                                         onmouseover="this.style.borderColor='#4f46e5'; this.style.transform='translateY(-2px)'"
-                                         onmouseout="this.style.borderColor='#f1f5f9'; this.style.transform='translateY(0)'">
+                                    <div class="test-row-item">
                                         <div style="display: flex; align-items: center; gap: 20px;">
                                             <div style="width: 50px; height: 50px; background: #eef2ff; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #4f46e5; font-size: 20px;">
                                                 <i class="fas fa-book-reader"></i>
@@ -385,7 +386,7 @@
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 350px 1fr; gap: 25px;">
+                    <div class="mytests-layout">
 
                         <div class="optional-selector-card" style="background: white; padding: 25px; border-radius: 20px; border: 1px solid #e2e8f0; align-self: start;">
                             <h3 style="font-size: 16px; color: #1e293b; margin-bottom: 20px; font-weight: 700;">
@@ -484,7 +485,7 @@
 
 
 
-                <section id="results-section" class="content-body" style="display: none;">
+                <section id="results-section" class="content-body" >
                     <div class="section-header">
                         <h2><i class="fas fa-chart-line" style="color: #3b82f6;"></i> <span data-i18n="results-title">Mening natijalarim va tahlil</span></h2>
                     </div>
@@ -520,25 +521,25 @@
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 30px;" class="charts-container">
-                        <div class="leaderboard-card" style="padding: 20px; height: 350px; display: flex; flex-direction: column;">
+                    <div class="charts-container">
+                        <div class="leaderboard-card chart-growth-card">
                             <h3 style="font-size: 16px; margin-bottom: 15px;"><i class="fas fa-chart-area"></i> <span data-i18n="growth-chart">O'sish dinamikasi</span></h3>
                             <div style="flex-grow: 1; position: relative;">
                                 <canvas id="growthChart"></canvas>
                             </div>
                         </div>
 
-                        <div class="leaderboard-card" style="padding: 25px; text-align: center; background: linear-gradient(145deg, #ffffff, #f8fafc); border: 1px solid #e2e8f0; overflow: hidden; position: relative;">
+                        <div class="leaderboard-card chart-skill-card">
 
                             <h3 style="font-size: 15px; font-weight: 700; color: #64748b; margin-bottom: 20px; letter-spacing: 0.5px;">
                                 <i class="fas fa-microchip" style="color: #3b82f6;"></i> <span data-i18n="skill-level">Bilim darajasi</span>
                             </h3>
 
-                            <div style="position: relative; height: 200px; display: flex; justify-content: center; align-items: center;">
+                            <div style="position: relative; height: 180px; display: flex; justify-content: center; align-items: center;">
 
                                 <div class="pulse-ring" style="position: absolute; width: 140px; height: 140px; border-radius: 50%; border: 2px solid #3b82f61a; animation: pulse 2s infinite;"></div>
 
-                                <div style="width: 170px; height: 170px; z-index: 2;">
+                                <div style="width: 150px; height: 150px; z-index: 2; flex-shrink: 0;">
                                     <canvas id="skillChart"></canvas>
                                 </div>
 
@@ -571,7 +572,7 @@
                     <div class="leaderboard-card" style="margin-top: 35px;">
                         <div style="padding: 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                             <h3 style="font-size: 18px;" data-i18n="results-history">Natijalar tarixi</h3>
-                            <div style="display: flex; gap: 10px;">
+                            <div class="results-toolbar" style="display: flex; gap: 10px;">
                                 <button onclick="downloadAllCertificates()" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
                                     <i class="fas fa-file-download"></i> <span data-i18n="all-certs">All Certificates</span>
                                 </button>
@@ -579,7 +580,7 @@
                             </div>
                         </div>
 
-                        <table style="width: 100%; border-collapse: collapse;" id="resultsTable">
+                        <div class="tbl-wrap"><table style="width: 100%; border-collapse: collapse;" id="resultsTable">
                             <thead style="background: #f8fafc; text-align: left;">
                                 <tr>
                                     <th style="padding: 15px;" data-i18n="th-subject">Fan nomi</th>
@@ -591,7 +592,11 @@
                             </thead>
                             <tbody>
                                 {% for res in student_results %}
-                                <tr style="border-bottom: 1px solid #f1f5f9; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                                <tr class="result-row"
+                                    data-result-id="{{ res.id }}"
+                                    data-subject="{{ res.subject|lower }}"
+                                    data-cert-eligible="{% if res.score_percent >= 80 %}1{% else %}0{% endif %}"
+                                    style="border-bottom: 1px solid #f1f5f9; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                                     <td style="padding: 15px; font-weight: 600;" data-subject-name="{{ res.subject }}">{{ res.subject }}</td>
                                     <td style="padding: 15px; color: #64748b;">{{ res.date_taken|date:"d.m.Y" }}</td>
                                     <td style="padding: 15px;">{{ res.correct_count }} / {{ res.total_questions }}</td>
@@ -653,7 +658,7 @@
                 </section>
 
 
-                <section id="reyting-section" class="content-body" style="display: none;">
+                <section id="reyting-section" class="content-body" >
                     <div class="section-header" style="margin-bottom: 25px; display: flex; flex-direction: column; align-items: flex-start;">
                         <h2 style="margin: 0; font-size: 27px; display: flex; align-items: center; gap: 10px;">
                             <i class="fas fa-trophy" style="color: #f59e0b;"></i> Leaderboard
@@ -664,7 +669,6 @@
                     </div>
 
                     <div class="top-podium">
-                        <div class="top-podium" style="display: flex; justify-content: center; align-items: flex-end; gap: 20px;">
                             {% for top in leaderboard|slice:":3" %}
                             <div class="podium-item {% if forloop.counter == 1 %}rank-gold{% elif forloop.counter == 2 %}rank-silver{% else %}rank-bronze{% endif %}"
                                  style="order: {% if forloop.counter == 1 %}2{% elif forloop.counter == 2 %}1{% else %}3{% endif %};">
@@ -679,11 +683,10 @@
                                     <i class="fas fa-medal" style="position: absolute; bottom: 0; right: 0; font-size: 20px;
                                        color: {% if forloop.counter == 1 %}#ffd700{% elif forloop.counter == 2 %}#c0c0c0{% else %}#cd7f32{% endif %};"></i>
                                 </div>
-                                <div style="font-weight: bold; margin-top: 10px;">{{ top.first_name }}</div>
+                                <div style="font-weight: bold; margin-top: 10px; color: black;">{{ top.first_name }}</div>
                                 <div style="color: #2563eb; font-size: 18px; font-weight: 800;">{{ top.score_percent|floatformat:0 }}%</div>
                             </div>
                             {% endfor %}
-                        </div>
                     </div>
 
                     <div class="leaderboard-card">
@@ -716,7 +719,7 @@
                 </section>
 
 
-                <section id="settings-section" class="content-body" style="display: none;">
+                <section id="settings-section" class="content-body" >
                     <div class="section-header">
                         <h2><i class="fas fa-cog" style="color: #64748b;"></i> <span data-i18n="settings-title">System Settings</span></h2>
                     </div>
@@ -850,114 +853,7 @@
                 btn.title = 'Exam has started — cannot delete';
             }
         });
-
-/* =====================================================
-   SERTIFIKAT YUKLAB OLISH — TOAST NOTIFICATION
-   ===================================================== */
-let certToastTimer = null;
-
-function downloadCertificate(resultId, btnEl) {
-    // Tugmani loading holatga o'tkazish
-    if (btnEl) {
-        btnEl.disabled = true;
-        btnEl.style.opacity = '0.7';
-        const origHtml = btnEl.innerHTML;
-        btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        btnEl._origHtml = origHtml;
-    }
-
-    showCertToast('loading', 'Tekshirilmoqda...', 'Sertifikat holati aniqlanmoqda...');
-
-    fetch(`/generate-certificate/${resultId}/`)
-        .then(response => {
-            if (response.ok) {
-                // Muvaffaqiyatli — faylni yuklab olish
-                return response.blob().then(blob => {
-                    const url  = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    const disp = response.headers.get('Content-Disposition') || '';
-                    const match = disp.match(/filename="(.+)"/);
-                    link.download = match ? match[1] : `sertifikat_${resultId}.png`;
-                    link.href = url;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(url);
-
-                    showCertToast('success', 'Sertifikat yuklab olindi!', 'Faylni yuklamalar papkasidan topishingiz mumkin.');
-                    if (btnEl) { btnEl.disabled = false; btnEl.style.opacity = '1'; btnEl.innerHTML = btnEl._origHtml; }
-                });
-            } else {
-                return response.text().then(text => {
-                    showCertToast('error', 'Hali vaqt kelmadi', text);
-                    if (btnEl) { btnEl.disabled = false; btnEl.style.opacity = '1'; btnEl.innerHTML = btnEl._origHtml; }
-                });
-            }
-        })
-        .catch(err => {
-            showCertToast('error', 'Xatolik yuz berdi', 'Internetni tekshirib qayta urinib ko'ring.');
-            if (btnEl) { btnEl.disabled = false; btnEl.style.opacity = '1'; btnEl.innerHTML = btnEl._origHtml; }
-        });
-}
-
-function showCertToast(type, title, msg) {
-    const toast    = document.getElementById('certToast');
-    const icon     = document.getElementById('certToastIcon');
-    const titleEl  = document.getElementById('certToastTitle');
-    const msgEl    = document.getElementById('certToastMsg');
-    const progress = document.getElementById('certToastProgress');
-
-    // Rang va ikonka
-    const styles = {
-        loading: { bg: '#eff6ff', color: '#3b82f6', icon: 'fas fa-spinner fa-spin', bar: '#3b82f6' },
-        success: { bg: '#f0fdf4', color: '#10b981', icon: 'fas fa-check-circle',    bar: '#10b981' },
-        error:   { bg: '#fef2f2', color: '#ef4444', icon: 'fas fa-clock',            bar: '#ef4444' },
-    };
-    const s = styles[type] || styles.loading;
-
-    icon.style.background  = s.bg;
-    icon.style.color       = s.color;
-    icon.innerHTML         = `<i class="${s.icon}"></i>`;
-    titleEl.textContent    = title;
-    msgEl.textContent      = msg;
-    progress.style.background = s.bar;
-
-    // Progress bar animatsiyasi
-    progress.style.transition = 'none';
-    progress.style.width      = '100%';
-
-    toast.style.display = 'block';
-
-    if (certToastTimer) clearTimeout(certToastTimer);
-
-    // Loading holatda yopilmasin
-    if (type !== 'loading') {
-        const duration = type === 'success' ? 4000 : 6000;
-        setTimeout(() => {
-            progress.style.transition = `width ${duration}ms linear`;
-            progress.style.width      = '0%';
-        }, 50);
-        certToastTimer = setTimeout(closeCertToast, duration);
-    } else {
-        progress.style.transition = 'width 1.5s ease-in-out';
-        progress.style.width      = '30%';
-    }
-}
-
-function closeCertToast() {
-    const toast = document.getElementById('certToast');
-    if (toast) {
-        toast.style.animation = 'toastSlideOut 0.25s ease forwards';
-        setTimeout(() => {
-            toast.style.display = '';
-            toast.style.animation = '';
-        }, 250);
-    }
-    if (certToastTimer) clearTimeout(certToastTimer);
-}
-
-
-</script>
+    </script>
 
 <!-- ===== PAROL O'ZGARTIRISH MODALI ===== -->
 <div id="passwordModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center; backdrop-filter:blur(4px);">

@@ -1,44 +1,4 @@
-/* =====================================================
-   MOBILE SIDEBAR
-   ===================================================== */
-function toggleMobileSidebar() {
-    const sidebar  = document.querySelector('.sidebar');
-    const overlay  = document.getElementById('sidebarOverlay');
-    const btn      = document.getElementById('mobileMenuBtn');
-    const isOpen   = sidebar.classList.contains('mobile-open');
-
-    if (isOpen) {
-        sidebar.classList.remove('mobile-open');
-        overlay.classList.remove('active');
-        btn.innerHTML = '<i class="fas fa-bars"></i>';
-    } else {
-        sidebar.classList.add('mobile-open');
-        overlay.classList.add('active');
-        btn.innerHTML = '<i class="fas fa-times"></i>';
-    }
-}
-
-function closeMobileSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    const btn     = document.getElementById('mobileMenuBtn');
-    sidebar.classList.remove('mobile-open');
-    overlay.classList.remove('active');
-    if (btn) btn.innerHTML = '<i class="fas fa-bars"></i>';
-}
-
-// Sidebar linkga bosilganda mobileda yopilsin
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.sidebar-nav a').forEach(link => {
-        link.addEventListener('click', () => {
-            if (window.innerWidth <= 768) closeMobileSidebar();
-        });
-    });
-    // Oyna o'lchami o'zgarganda overlay/sidebar reset
-    window.addEventListener('resize', () => {
-        if (window.innerWidth > 768) closeMobileSidebar();
-    });
-});
+/* old mobile sidebar removed */
 
 // 1. GLOBAL VARIABLES
 let currentQuestion = 1;
@@ -52,21 +12,16 @@ let activeTestId = null;
 // Helper function to clean text
 const cleanText = (txt) => String(txt || "").trim().toLowerCase();
 
-document.addEventListener('DOMContentLoaded', () => {
-    const navLinks = document.querySelectorAll('.sidebar-nav a, .admin-nav a');
-
-    navLinks.forEach((link) => {
-        link.addEventListener('click', function(e) {
-            // If button has onclick (e.g. loadTab), class is updated inside that function
-            if (this.getAttribute('onclick')) return;
-
-            e.preventDefault();
-            updateActiveLink(this);
-
-            const linkText = this.innerText.trim();
-            const pageTitle = document.getElementById('page-title');
-            if (pageTitle) pageTitle.innerText = linkText;
-        });
+document.addEventListener('DOMContentLoaded', function() {
+    // Nav link onclick bor bo'lsa loadTab boshqaradi — qo'shimcha listener kerak emas
+    // Faqat onclick yo'q linklarga listener qo'shamiz
+    document.querySelectorAll('.sidebar-nav a').forEach(function(link) {
+        if (!link.getAttribute('onclick')) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                updateActiveLink(this);
+            });
+        }
     });
 });
 
@@ -273,9 +228,36 @@ function closeSearchDropdown() {
     if (d) d.style.display = 'none';
 }
 
+/* ============================================
+   MOBILE SIDEBAR
+   ============================================ */
+function dToggle() {
+    var s = document.querySelector('.sidebar');
+    var o = document.getElementById('dOv');
+    var b = document.getElementById('dHam');
+    if (!s) return;
+    var open = s.classList.contains('is-open');
+    s.classList.toggle('is-open', !open);
+    if (o) o.classList.toggle('is-open', !open);
+    if (b) b.classList.toggle('is-open', !open);
+    document.body.style.overflow = open ? '' : 'hidden';
+}
+function dClose() {
+    var s = document.querySelector('.sidebar');
+    if (!s) return;
+    s.classList.remove('is-open');
+    var o = document.getElementById('dOv');
+    var b = document.getElementById('dHam');
+    if (o) o.classList.remove('is-open');
+    if (b) b.classList.remove('is-open');
+    document.body.style.overflow = '';
+}
+window.addEventListener('resize', function() {
+    if (window.innerWidth > 768) dClose();
+});
+
 function loadTab(tabName) {
-    // 1. Hide all sections
-    const sectionMap = {
+    var sectionMap = {
         'home'    : 'home-section',
         'my-tests': 'my-tests',
         'results' : 'results-section',
@@ -283,30 +265,55 @@ function loadTab(tabName) {
         'settings': 'settings-section',
     };
 
-    Object.values(sectionMap).forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.style.display = 'none';
+    // 1. Barcha sectionlarni yashirish (!important override)
+    Object.values(sectionMap).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.style.setProperty('display', 'none', 'important');
     });
 
-    // 2. Show target section
-    const targetId = sectionMap[tabName];
-    const activeSection = targetId ? document.getElementById(targetId) : null;
-
-    if (activeSection) {
-        activeSection.style.display = 'block';
-        activeSection.animate([
-            { opacity: 0, transform: 'translateY(5px)' },
+    // 2. Kerakli sectionni ko'rsatish (!important override)
+    var sec = document.getElementById(sectionMap[tabName]);
+    if (!sec) return;
+    sec.style.setProperty('display', 'block', 'important');
+    // Sahifalar o'zgarganda scroll tepaga qaytsin
+    var mc = document.querySelector('.main-content');
+    if (mc) mc.scrollTop = 0;
+    window.scrollTo(0, 0);
+    try {
+        sec.animate([
+            { opacity: 0, transform: 'translateY(4px)' },
             { opacity: 1, transform: 'translateY(0)' }
-        ], { duration: 200 });
-    } else {
-        console.error("Error: section '" + tabName + "' not found!");
-        return;
-    }
+        ], { duration: 180, easing: 'ease-out' });
+    } catch(e) {}
 
-    // 3. Update sidebar active class
-    document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
-    const clickedLink = document.querySelector(`[onclick*="loadTab('${tabName}')"]`);
-    if (clickedLink) clickedLink.classList.add('active');
+    // 3. Sidebar active linkni yangilash
+    document.querySelectorAll('.sidebar-nav a').forEach(function(l) {
+        l.classList.remove('active');
+    });
+    // tabName bo'yicha to'g'ri linkni topamiz
+    var matched = null;
+    document.querySelectorAll('.sidebar-nav a[onclick]').forEach(function(l) {
+        var oc = l.getAttribute('onclick') || '';
+        if (oc.indexOf("'" + tabName + "'") !== -1 || oc.indexOf('"' + tabName + '"') !== -1) {
+            matched = l;
+        }
+    });
+    if (matched) matched.classList.add('active');
+
+    // 4. Mobileda sidebar yopilsin
+    dClose(); /* Har doim yopilsin */
+
+    // Grafik sahifaga o'tilganda chartni resize qilish
+    if (tabName === 'results') {
+        setTimeout(function() {
+            if (typeof Chart !== 'undefined') {
+                var g = Chart.getChart('growthChart');
+                var s = Chart.getChart('skillChart');
+                if (g) g.resize();
+                if (s) s.resize();
+            }
+        }, 50);
+    }
 }
 
 /*
@@ -1728,7 +1735,9 @@ function downloadCertificate(resultId, btnEl) {
 
     fetch('/generate-certificate/' + resultId + '/')
         .then(function(response) {
-            if (response.ok) {
+            var contentType = response.headers.get('Content-Type') || '';
+            if (response.ok && contentType.indexOf('image') !== -1) {
+                // Muvaffaqiyat — PNG fayl
                 return response.blob().then(function(blob) {
                     var url  = URL.createObjectURL(blob);
                     var link = document.createElement('a');
@@ -1744,8 +1753,9 @@ function downloadCertificate(resultId, btnEl) {
                     if (btnEl) { btnEl.disabled = false; btnEl.style.opacity = '1'; btnEl.innerHTML = btnEl._origHtml; }
                 });
             } else {
-                return response.text().then(function(text) {
-                    showCertToast('error', 'Hali vaqt kelmadi', text);
+                // Xato — JSON dan message o'qish
+                return response.json().then(function(data) {
+                    showCertToast('error', 'Hali vaqt kelmadi', data.message || 'Sertifikat yuklab olib bolmadi.');
                     if (btnEl) { btnEl.disabled = false; btnEl.style.opacity = '1'; btnEl.innerHTML = btnEl._origHtml; }
                 });
             }
@@ -1812,4 +1822,103 @@ function closeCertToast() {
         }, 260);
     }
     if (certToastTimer) clearTimeout(certToastTimer);
+}
+
+/* =====================================================
+   NATIJALAR JADVALI — QIDIRUV VA BARCHA SERTIFIKAT
+   ===================================================== */
+
+// 1. QIDIRUV — Fan nomiga qarab satrlarni filter qilish
+function filterResultsTable() {
+    var input = document.getElementById('subjectSearch');
+    if (!input) return;
+    var query = input.value.toLowerCase().trim();
+    var rows  = document.querySelectorAll('#resultsTable .result-row');
+    var found = 0;
+
+    rows.forEach(function(row) {
+        var subject = (row.getAttribute('data-subject') || '').toLowerCase();
+        var show = !query || subject.indexOf(query) !== -1;
+        row.style.display = show ? '' : 'none';
+        if (show) found++;
+    });
+
+    // Bo'sh natija xabari
+    var emptyMsg = document.getElementById('resultsTableEmpty');
+    if (!emptyMsg) {
+        emptyMsg = document.createElement('tr');
+        emptyMsg.id = 'resultsTableEmpty';
+        emptyMsg.innerHTML = '<td colspan="6" style="text-align:center; padding:24px; color:#94a3b8; font-size:14px;"><i class="fas fa-search" style="margin-right:8px;"></i>Fan topilmadi</td>';
+        var tbody = document.querySelector('#resultsTable tbody');
+        if (tbody) tbody.appendChild(emptyMsg);
+    }
+    emptyMsg.style.display = (found === 0 && query) ? '' : 'none';
+}
+
+// 2. BARCHA SERTIFIKATLARNI KETMA-KET YUKLAB OLISH
+function downloadAllCertificates() {
+    var rows = document.querySelectorAll('#resultsTable .result-row[data-cert-eligible="1"]');
+
+    if (rows.length === 0) {
+        showCertToast('error', 'Sertifikat yo\'q', '80% va undan yuqori natija yo\'q.');
+        return;
+    }
+
+    // result id larni yig'ish
+    var ids = [];
+    rows.forEach(function(row) {
+        var id = row.getAttribute('data-result-id');
+        if (id) ids.push(parseInt(id));
+    });
+
+    showCertToast('loading', ids.length + ' ta sertifikat', 'Yuklab olinmoqda (1 / ' + ids.length + ')...');
+
+    // Ketma-ket yuklab olish (har biri 800ms oraliq bilan)
+    var index = 0;
+
+    function downloadNext() {
+        if (index >= ids.length) {
+            showCertToast('success', 'Hammasi tayyor!', ids.length + ' ta sertifikat yuklab olindi.');
+            return;
+        }
+
+        var currentId = ids[index];
+        var current   = index + 1;
+
+        // Progress xabari
+        showCertToast('loading', current + ' / ' + ids.length + ' yuklanmoqda...', 'Sertifikat #' + currentId + ' tayyorlanmoqda...');
+
+        fetch('/generate-certificate/' + currentId + '/')
+            .then(function(response) {
+                var contentType = response.headers.get('Content-Type') || '';
+                if (response.ok && contentType.indexOf('image') !== -1) {
+                    return response.blob().then(function(blob) {
+                        var url  = URL.createObjectURL(blob);
+                        var link = document.createElement('a');
+                        var disp = response.headers.get('Content-Disposition') || '';
+                        var match = disp.match(/filename="(.+)"/);
+                        link.download = match ? match[1] : 'sertifikat_' + currentId + '.png';
+                        link.href = url;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                    });
+                } else {
+                    return response.json().then(function(data) {
+                        console.warn('Sertifikat #' + currentId + ' o\'tkazib yuborildi:', data.message);
+                    });
+                }
+            })
+            .catch(function(err) {
+                console.warn('Sertifikat #' + currentId + ' xato:', err);
+            })
+            .finally(function() {
+                index++;
+                // Har biri orasida 900ms kutish (brauzer bloklamasligi uchun)
+                setTimeout(downloadNext, 900);
+            });
+    }
+
+    downloadNext();
 }

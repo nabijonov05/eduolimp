@@ -12,32 +12,36 @@
 <body>
 
     <div class="admin-container">
+    <button class="admin-hamburger" id="adminHamburger" onclick="toggleAdminSidebar()">
+        <span></span><span></span><span></span>
+    </button>
+    <div class="admin-sidebar-overlay" id="adminOverlay" onclick="closeAdminSidebar()"></div>
+
         <aside class="sidebar">
             <div class="logo">
                 <i class="fas fa-user-shield"></i>
                 <span>Admin Panel</span>
             </div>
             <nav class="admin-nav">
-                <a href="#" class="active"><i class="fas fa-tachometer-alt"></i> Umumiy nazorat</a>
-                <a href="#"><i class="fas fa-plus-circle"></i> Yangi test qo'shish</a>
-                <a href="#"><i class="fas fa-users"></i> Foydalanuvchilar</a>
-                <a href="#"><i class="fas fa-chart-bar"></i> Analitika</a>
-                <a href="#"><i class="fas fa-envelope"></i> Xabarnomalar</a>
-                <a href="#"><i class="fas fa-cogs"></i> Tizim sozlamalari</a>
+                <a href="#" class="active" data-key="dashboard"><i class="fas fa-tachometer-alt"></i> <span data-i18n="nav-dashboard">Umumiy nazorat</span></a>
+                <a href="#" data-key="test"><i class="fas fa-plus-circle"></i> <span data-i18n="nav-test">Yangi test qo'shish</span></a>
+                <a href="#" data-key="users"><i class="fas fa-users"></i> <span data-i18n="nav-users">Foydalanuvchilar</span></a>
+                <a href="#" data-key="analytics"><i class="fas fa-chart-bar"></i> <span data-i18n="nav-analytics">Analitika</span></a>
+                <a href="#" data-key="settings"><i class="fas fa-cogs"></i> <span data-i18n="nav-settings">Tizim sozlamalari</span></a>
             </nav>
         </aside>
         <main class="admin-main">
         <header class="top-bar">
-            <h2 id="page-title">Umumiy nazorat</h2>
+            <h2 id="page-title" data-i18n="nav-dashboard">Umumiy nazorat</h2>
             <div class="admin-profile">
-                <span>Super Admin</span>
+                <span data-i18n="admin-label">Super Admin</span>
                 <i class="fas fa-user-circle"></i>
             </div>
         </header>
 
         <div class="content-area">
            <section id="dashboard-section" class="admin-section">
-             <h2 style="margin-bottom: 25px;"><i class="fas fa-trophy"></i> Fanlar bo'yicha kengaytirilgan tahlil</h2>
+             <h2 style="margin-bottom: 25px;"><i class="fas fa-trophy"></i> <span data-i18n="dash-heading">Fanlar bo'yicha kengaytirilgan tahlil</span></h2>
 
              <style>
                  .rank-1 { background: #ffd700 !important; color: #000; font-weight: bold; }
@@ -81,13 +85,13 @@
 
                      <div onclick="toggleSection('folder-{{ forloop.counter }}')" style="padding: 20px 30px; background: #f8faff; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
                          <div>
-                             <span style="font-size: 1.3rem; font-weight: 800; color: #4e73df;">{{ item.subject }}</span>
-                             <span style="margin-left: 15px; color: #94a3b8;">{{ item.total }} ta ishtirokchi</span>
+                             <span class="dash-subject-name" data-subject-key="{{ item.subject }}" style="font-size: 1.3rem; font-weight: 800; color: #4e73df;">{{ item.subject }}</span>
+                             <span style="margin-left: 15px; color: #94a3b8;">{{ item.total }} <span data-i18n="dash-participants">ta ishtirokchi</span></span>
                          </div>
                          <i class="fas fa-chevron-down"></i>
                      </div>
 
-                     <div id="folder-{{ forloop.counter }}" style="display: none; padding: 0 20px 20px 20px;">
+                     <div id="folder-{{ forloop.counter }}" style="display: none; padding: 0 12px 16px 12px;">
 
                          {% regroup all_results by subject as subject_groups %}
                          {% for sub_group in subject_groups %}
@@ -98,25 +102,25 @@
 
                                      <div class="grade-divider" style="display: flex; justify-content: space-between; align-items: center; background: #f8faff; padding: 10px 20px; border-left: 4px solid #4e73df; margin-top: 15px;">
                                          <span>
-                                             <i class="fas fa-graduation-cap"></i> {{ grade_group.grouper }}-sinf natijalari
+                                             <i class="fas fa-graduation-cap"></i> {{ grade_group.grouper }}-<span data-i18n="dash-grade-results">sinf natijalari</span>
                                          </span>
 
                                          <a href="{% url 'export_excel' item.subject grade_group.grouper %}"
                                             style="background: #1cc88a; color: white; padding: 6px 15px; border-radius: 6px; font-size: 0.8rem; text-decoration: none; display: flex; align-items: center; gap: 8px; font-weight: 600; box-shadow: 0 2px 4px rgba(28, 200, 138, 0.2);">
-                                             <i class="fas fa-file-excel"></i> Excel yuklab olish
+                                             <i class="fas fa-file-excel"></i> <span data-i18n="dash-excel-download">Excel yuklab olish</span>
                                          </a>
                                      </div>
 
-                                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+                                     <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;"><table style="width: 100%; min-width: 520px; border-collapse: collapse; margin-bottom: 10px;">
                                          <thead>
                                              <tr style="text-align: left; color: #64748b; font-size: 0.85rem; border-bottom: 1px solid #eee;">
-                                                 <th style="padding: 15px; width: 15%;">Reyting</th>
-                                                 <th style="width: 25%;">F.I.SH</th>
-                                                 <th style="width: 15%;">Sinf</th>
-                                                 <th style="width: 15%;">Maktab</th>
-                                                 <th style="width: 15%;">Natija (To'g'ri/Jami)</th>
-                                                 <th style="width: 10%;">Ball (%)</th>
-                                                 <th style="text-align: center; width: 5%;">Amal</th>
+                                                 <th style="padding: 15px; width: 15%;" data-i18n="th-rating">Reyting</th>
+                                                 <th style="width: 25%;" data-i18n="th-fullname">F.I.SH</th>
+                                                 <th style="width: 15%;" data-i18n="th-grade">Sinf</th>
+                                                 <th style="width: 15%;" data-i18n="th-school">Maktab</th>
+                                                 <th style="width: 15%;" data-i18n="th-result">Natija (To'g'ri/Jami)</th>
+                                                 <th style="width: 10%;" data-i18n="th-score">Ball (%)</th>
+                                                 <th style="text-align: center; width: 5%;" data-i18n="th-action">Amal</th>
                                              </tr>
                                          </thead>
                                          <tbody>
@@ -124,17 +128,17 @@
                                              <tr style="border-bottom: 1px solid #f1f5f9; transition: 0.2s;" onmouseover="this.style.background='#fcfdff'" onmouseout="this.style.background='transparent'">
                                                  <td style="padding: 15px;">
                                                      <span class="status-badge {% if forloop.counter == 1 %}rank-1{% elif forloop.counter == 2 %}rank-2{% elif forloop.counter == 3 %}rank-3{% else %}background:#f1f5f9;{% endif %}">
-                                                         {{ forloop.counter }}-o'rin
+                                                         {{ forloop.counter }}-<span data-i18n="badge-place">o'rin</span>
                                                      </span>
                                                  </td>
                                                  <td style="font-weight: 600;">{{ res.last_name }} {{ res.first_name }}</td>
-                                                 <td><span style="color: #4e73df; font-weight: bold; background: #f0f3ff; padding: 2px 8px; border-radius: 5px;">{{ res.grade }}-sinf</span></td>
+                                                 <td><span style="color: #4e73df; font-weight: bold; background: #f0f3ff; padding: 2px 8px; border-radius: 5px;">{{ res.grade }}-<span data-i18n="unit-sinf">sinf</span></span></td>
                                                  <td style="color: #64748b;">{{ res.school }}</td>
 
                                                  <td>
                                                      <div style="font-weight: bold; color: #1e293b;">
-                                                         <span style="color: #1cc88a;">{{ res.correct_count }} ta</span>
-                                                         <span style="color: #94a3b8; font-weight: normal; font-size: 0.85rem;"> / {{ res.total_questions }} tadan</span>
+                                                         <span style="color: #1cc88a;">{{ res.correct_count }} <span data-i18n="unit-ta">ta</span></span>
+                                                         <span style="color: #94a3b8; font-weight: normal; font-size: 0.85rem;"> / {{ res.total_questions }} <span data-i18n="unit-tadan">tadan</span></span>
                                                      </div>
                                                  </td>
 
@@ -146,14 +150,14 @@
                                                  </td>
 
                                                  <td style="text-align: center;">
-                                                     <a href="{% url 'delete_test_result' res.id %}" onclick="return confirm('Haqiqatdan ham bu natijani o\'chirmoqchimisiz?')" class="delete-btn">
+                                                     <a href="{% url 'delete_test_result' res.id %}" onclick="return confirm(adminT('confirm-delete-result'))" class="delete-btn">
                                                          <i class="fas fa-trash-alt"></i>
                                                      </a>
                                                  </td>
                                              </tr>
                                              {% endfor %}
                                          </tbody>
-                                     </table>
+                                     </table></div>
                                  {% endfor %}
                              {% endif %}
                          {% endfor %}
@@ -163,8 +167,8 @@
              {% else %}
                  <div class="no-data-wrapper">
                      <img src="https://img.icons8.com/clouds/200/database.png" alt="No Data" style="width: 160px; margin-bottom: 10px;">
-                     <div class="no-data-title">Natijalar hozircha mavjud emas</div>
-                     <p class="no-data-desc">Olympiada yakunlangach, barcha natijalar fanlar kesimida shu yerda jamlanadi.</p>
+                     <div class="no-data-title" data-i18n="nodata-title">Natijalar hozircha mavjud emas</div>
+                     <p class="no-data-desc" data-i18n="nodata-desc">Olympiada yakunlangach, barcha natijalar fanlar kesimida shu yerda jamlanadi.</p>
                  </div>
              {% endif %}
          </section>
@@ -184,19 +188,19 @@
             </script>
 
             <section id="analytics-section" class="admin-section" style="display: none;">
-                <h2 style="margin-bottom: 25px;"><i class="fas fa-chart-pie"></i> Tizim Analitikasi</h2>
+                <h2 style="margin-bottom: 25px;"><i class="fas fa-chart-pie"></i> <span data-i18n="analytics-heading">Tizim Analitikasi</span></h2>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
 
                     <div style="background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative;">
-                        <h4 style="margin-bottom: 20px; color: #4e73df;"><i class="fas fa-chart-bar"></i> Fanlar bo'yicha o'rtacha o'zlashtirish (%)</h4>
+                        <h4 style="margin-bottom: 20px; color: #4e73df;"><i class="fas fa-chart-bar"></i> <span data-i18n="analytics-subject-chart">Fanlar bo'yicha o'rtacha o'zlashtirish (%)</span></h4>
                         <div style="height: 300px; position: relative; width: 100%;">
                             <canvas id="subjectChart"></canvas>
                         </div>
                     </div>
 
                     <div style="background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative;">
-                        <h4 style="margin-bottom: 20px; color: #1cc88a;"><i class="fas fa-users"></i> Sinflar kesimida ishtirokchilar</h4>
+                        <h4 style="margin-bottom: 20px; color: #1cc88a;"><i class="fas fa-users"></i> <span data-i18n="analytics-grade-chart">Sinflar kesimida ishtirokchilar</span></h4>
                         <div style="height: 300px; position: relative; width: 100%;">
                             <canvas id="gradeChart"></canvas>
                         </div>
@@ -217,37 +221,37 @@
 
             <section id="test-section" class="admin-section" style="display: none;">
                 <div class="form-card">
-                    <h3><i class="fas fa-plus-circle"></i> Yangi test materiallarini yuklash</h3>
+                    <h3><i class="fas fa-plus-circle"></i> <span data-i18n="test-heading">Yangi test materiallarini yuklash</span></h3>
 
                     <div class="subject-grid">
                         <div class="subject-card" onclick="selectSubject('Matematika', this)">
                             <i class="fas fa-calculator"></i>
-                            <span>Matematika</span>
+                            <span data-i18n="subj-matematika">Matematika</span>
                         </div>
                         <div class="subject-card" onclick="selectSubject('Fizika', this)">
                             <i class="fas fa-atom"></i>
-                            <span>Fizika</span>
+                            <span data-i18n="subj-fizika">Fizika</span>
                         </div>
                         <div class="subject-card" onclick="selectSubject('Ona tili', this)">
                             <i class="fas fa-pen-nib"></i>
-                            <span>Ona tili</span>
+                            <span data-i18n="subj-ona-tili">Ona tili</span>
                         </div>
                         <div class="subject-card" onclick="selectSubject('Ingliz tili', this)">
                             <i class="fas fa-language"></i>
-                            <span>Ingliz tili</span>
+                            <span data-i18n="subj-ingliz-tili">Ingliz tili</span>
                         </div>
                         <div class="subject-card" onclick="selectSubject('Geografiya', this)">
                             <i class="fas fa-globe-asia"></i>
-                            <span>Geografiya</span>
+                            <span data-i18n="subj-geografiya">Geografiya</span>
                         </div>
 
                         <div class="subject-card" onclick="selectSubject('Tarix', this)">
                             <i class="fas fa-landmark"></i>
-                            <span>Tarix</span>
+                            <span data-i18n="subj-tarix">Tarix</span>
                         </div>
 
                         <div class="subject-card" onclick="selectSubject('Rus tili', this)">
-                            <i class="fas fa-font">Я</i> <span>Rus tili</span>
+                            <i class="fas fa-font">Я</i> <span data-i18n="subj-rus-tili">Rus tili</span>
                         </div>
                     </div>
                     <form id="test-upload-form" method="POST" action="{% url 'upload_test' %}" enctype="multipart/form-data">
@@ -260,42 +264,42 @@
 
                             <div class="class-list">
                                 <div class="class-row" data-grade="9">
-                                    <span>9-sinf uchun test:</span>
+                                    <span>9-<span data-i18n="test-grade-label">sinf uchun test:</span></span>
                                     <div class="upload-controls">
                                         <label class="upload-label">
                                             <input type="file" name="file_9" onchange="handleFileUpload(this, 'file-name-9')" hidden>
-                                            <i class="fas fa-cloud-upload-alt"></i> Fayl tanlash
+                                            <i class="fas fa-cloud-upload-alt"></i> <span data-i18n="btn-choose-file">Fayl tanlash</span>
                                         </label>
-                                        <span id="file-name-9" class="file-status">Fayl tanlanmagan</span>
+                                        <span id="file-name-9" class="file-status" data-i18n="file-not-selected">Fayl tanlanmagan</span>
                                         <button type="button" class="delete-file-btn" onclick="removeFile('file-name-9', this)"><i class="fas fa-trash"></i></button>
                                     </div>
                                 </div>
 
                                 <div class="class-row" data-grade="10">
-                                    <span>10-sinf uchun test:</span>
+                                    <span>10-<span data-i18n="test-grade-label">sinf uchun test:</span></span>
                                     <div class="upload-controls">
                                         <label class="upload-label">
                                             <input type="file" name="file_10" onchange="handleFileUpload(this, 'file-name-10')" hidden>
-                                            <i class="fas fa-cloud-upload-alt"></i> Fayl tanlash
+                                            <i class="fas fa-cloud-upload-alt"></i> <span data-i18n="btn-choose-file">Fayl tanlash</span>
                                         </label>
-                                        <span id="file-name-10" class="file-status">Fayl tanlanmagan</span>
+                                        <span id="file-name-10" class="file-status" data-i18n="file-not-selected">Fayl tanlanmagan</span>
                                         <button type="button" class="delete-file-btn" onclick="removeFile('file-name-10', this)"><i class="fas fa-trash"></i></button>
                                     </div>
                                 </div>
 
                                 <div class="class-row" data-grade="11">
-                                    <span>11-sinf uchun test:</span>
+                                    <span>11-<span data-i18n="test-grade-label">sinf uchun test:</span></span>
                                     <div class="upload-controls">
                                         <label class="upload-label">
                                             <input type="file" name="file_11" onchange="handleFileUpload(this, 'file-name-11')" hidden>
-                                            <i class="fas fa-cloud-upload-alt"></i> Fayl tanlash
+                                            <i class="fas fa-cloud-upload-alt"></i> <span data-i18n="btn-choose-file">Fayl tanlash</span>
                                         </label>
-                                        <span id="file-name-11" class="file-status">Fayl tanlanmagan</span>
+                                        <span id="file-name-11" class="file-status" data-i18n="file-not-selected">Fayl tanlanmagan</span>
                                         <button type="button" class="delete-file-btn" onclick="removeFile('file-name-11', this)"><i class="fas fa-trash"></i></button>
                                     </div>
                                 </div>
                             </div>
-                            <button type="submit" class="save-btn" style="margin-top: 20px;">Barcha fayllarni saqlash</button>
+                            <button type="submit" class="save-btn" style="margin-top: 20px;" data-i18n="btn-save-all-files">Barcha fayllarni saqlash</button>
                         </div>
                     </form>
                 </div>
@@ -304,17 +308,17 @@
 
             <section id="user-section" class="admin-section" style="display: none;">
                 <div class="form-card">
-                    <h3><i class="fas fa-user-plus"></i> Yangi o'quvchi qo'shish</h3>
+                    <h3><i class="fas fa-user-plus"></i> <span data-i18n="user-heading">Yangi o'quvchi qo'shish</span></h3>
                     <form id="user-add-form" method="POST" action="{% url 'add_student' %}">
                         {% csrf_token %}
                         <div class="form-grid">
-                            <input type="text" name="first_name" placeholder="Ism" required>
-                            <input type="text" name="last_name" placeholder="Familiya" required>
-                            <input type="text" name="middle_name" placeholder="Otasining ismi" required>
-                            <input type="email" name="email" placeholder="Email manzili" required>
+                            <input type="text" name="first_name" placeholder-i18n="ph-firstname" placeholder="Ism" required>
+                            <input type="text" name="last_name" placeholder-i18n="ph-lastname" placeholder="Familiya" required>
+                            <input type="text" name="middle_name" placeholder-i18n="ph-middlename" placeholder="Otasining ismi" required>
+                            <input type="email" name="email" placeholder-i18n="ph-email" placeholder="Email manzili" required>
 
                             <select name="school" required>
-                                <option value="" disabled selected>Maktabni tanlang</option>
+                                <option value="" disabled selected data-i18n="opt-school">Maktabni tanlang</option>
                                 <option value="1-maktab">1-maktab</option>
                                 <option value="2-maktab">2-maktab</option>
                                 <option value="3-maktab">3-maktab</option>
@@ -359,14 +363,14 @@
                             </select>
 
                             <select name="grade" required>
-                                <option value="" disabled selected>Sinfni tanlang</option>
+                                <option value="" disabled selected data-i18n="opt-grade">Sinfni tanlang</option>
                                 <option value="9">9-sinf</option>
                                 <option value="10">10-sinf</option>
                                 <option value="11">11-sinf</option>
                             </select>
 
                             <select name="subject" required>
-                                <option value="" disabled selected>Fanni tanlang</option>
+                                <option value="" disabled selected data-i18n="opt-subject">Fanni tanlang</option>
                                 <option value="Matematika">Matematika</option>
                                 <option value="Fizika">Fizika</option>
                                 <option value="Ona-tili">Ona tili</option>
@@ -376,27 +380,27 @@
                                 <option value="Rus tili">Rus tili</option>
                             </select>
 
-                            <input type="date" name="exam_date" title="Olimpiada kuni" required>
-                            <input type="time" name="exam_time" title="Olimpiada vaqti" required>
+                            <input type="date" name="exam_date" title-i18n="title-exam-date" title="Olimpiada kuni" required>
+                            <input type="time" name="exam_time" title-i18n="title-exam-time" title="Olimpiada vaqti" required>
                         </div>
-                        <button type="submit" class="save-btn">Tizimga qo'shish</button>
+                        <button type="submit" class="save-btn" data-i18n="btn-add-student">Tizimga qo'shish</button>
                     </form>
                 </div>
 
                 <div style="background: white; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); margin-top: 30px; overflow: hidden; border: 1px solid #eef2ff;">
                     <div style="padding: 20px 30px; background: #f8faff; border-bottom: 1px solid #eef2ff; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                        <h3 style="color: #4e73df; margin: 0; min-width: 200px;"><i class="fas fa-list"></i> Ro'yxatga olingan o'quvchilar</h3>
+                        <h3 style="color: #4e73df; margin: 0; min-width: 200px;"><i class="fas fa-list"></i> <span data-i18n="user-list-heading">Ro'yxatga olingan o'quvchilar</span></h3>
 
                         <div style="display: flex; gap: 15px; flex-grow: 1; justify-content: flex-end; align-items: center;">
                             <div style="position: relative; width: 300px;">
                                 <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
-                                <input type="text" id="studentSearch" placeholder="Ism yoki familiya bo'yicha qidirish..."
+                                <input type="text" id="studentSearch" placeholder-i18n="ph-search-student" placeholder="Ism yoki familiya bo'yicha qidirish..."
                                        style="width: 100%; padding: 10px 15px 10px 35px; border-radius: 10px; border: 1px solid #e2e8f0; outline: none; transition: 0.3s; font-size: 0.9rem;">
                             </div>
 
                             <a href="{% url 'export_students_excel' %}"
                                style="background: #1cc88a; color: white; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; box-shadow: 0 4px 6px rgba(28, 200, 138, 0.2); transition: 0.3s;">
-                                <i class="fas fa-file-excel"></i> Ro'yxatni yuklab olish
+                                <i class="fas fa-file-excel"></i> <span data-i18n="btn-export-students">Ro'yxatni yuklab olish</span>
                             </a>
                         </div>
                     </div>
@@ -407,12 +411,13 @@
                             <table style="width: 100%; border-collapse: collapse;">
                                 <thead>
                                     <tr style="text-align: left; color: #64748b; font-size: 0.85rem; border-bottom: 1px solid #eee;">
-                                        <th style="padding: 15px;">F.I.SH</th>
-                                        <th>Sinf & Maktab</th>
-                                        <th>Tanlangan Fan</th>
-                                        <th>Imtihon Sanasi</th>
-                                        <th>Vaqti</th>
-                                        <th style="text-align: center;">Amal (Holat)</th>
+                                        <th style="padding: 15px;" data-i18n="th-fullname">F.I.SH</th>
+                                        <th data-i18n="th-grade-school">Sinf & Maktab</th>
+                                        <th data-i18n="th-selected-subject">Tanlangan Fan</th>
+                                        <th data-i18n="th-exam-date">Imtihon Sanasi</th>
+                                        <th data-i18n="th-exam-time">Vaqti</th>
+                                        <th style="text-align: center; width: 60px;" data-i18n="th-edit">Tahrir</th>
+                                        <th style="text-align: center;" data-i18n="th-status">Amal (Holat)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -441,6 +446,22 @@
                                                 <i class="far fa-clock" style="color: #f59e0b;"></i> {{ student.exam_time|time:"H:i" }}
                                             </div>
                                         </td>
+                                        <td style="text-align: center; vertical-align: middle; padding: 15px 8px;">
+                                            <button class="edit-student-btn"
+                                                data-id="{{ student.id }}"
+                                                data-firstname="{{ student.first_name|escapejs }}"
+                                                data-lastname="{{ student.last_name|escapejs }}"
+                                                data-middlename="{{ student.middle_name|escapejs }}"
+                                                data-email="{{ student.email|escapejs }}"
+                                                data-school="{{ student.school|escapejs }}"
+                                                data-grade="{{ student.grade }}"
+                                                data-subject="{{ student.subject|escapejs }}"
+                                                data-examdate="{{ student.exam_date|date:'Y-m-d' }}"
+                                                data-examtime="{{ student.exam_time|time:'H:i' }}"
+                                                onclick="handleEditClick(event, this)">
+                                                <i class="fas fa-pen"></i>
+                                            </button>
+                                        </td>
                                         <td style="text-align: center; vertical-align: middle; padding: 15px;">
                                             <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
                                                 <label class="switch-container" style="position: relative; display: inline-block; width: 34px; height: 18px; cursor: pointer;">
@@ -454,7 +475,7 @@
                                                 </label>
 
                                                 <a href="{% url 'delete_student' student.id %}"
-                                                   onclick="return confirm('O\'quvchini o\'chirishni tasdiqlaysizmi?')"
+                                                   onclick="return confirm(adminT('confirm-delete-student'))"
                                                    style="color: #e74a3b; text-decoration: none; font-size: 1.1rem;">
                                                     <i class="fas fa-trash-alt"></i>
                                                 </a>
@@ -463,7 +484,7 @@
                                     </tr>
                                     {% empty %}
                                     <tr>
-                                        <td colspan="6" style="text-align: center; padding: 30px; color: #94a3b8;">Hozircha o'quvchilar qo'shilmagan</td>
+                                        <td colspan="6" style="text-align: center; padding: 30px; color: #94a3b8;" data-i18n="no-students">Hozircha o'quvchilar qo'shilmagan</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -472,7 +493,7 @@
 
                         <div style="padding: 20px 30px; display: flex; justify-content: flex-end; border-top: 1px solid #f1f5f9; background: #fafbff;">
                             <button type="submit" style="background: #4e73df; color: white; padding: 12px 30px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(78, 115, 223, 0.2); transition: 0.3s;">
-                                <i class="fas fa-save"></i> Saqlash
+                                <i class="fas fa-save"></i> <span data-i18n="btn-save">Saqlash</span>
                             </button>
                         </div>
                     </form>
@@ -520,26 +541,26 @@
                             <i class="fas fa-sliders-h"></i>
                         </div>
                         <div class="stng-card-body">
-                            <h3>Test sozlamalari</h3>
-                            <p class="stng-desc">Olimpiada parametrlari va vaqtini boshqaring</p>
+                            <h3 data-i18n="stng-test-title">Test sozlamalari</h3>
+                            <p class="stng-desc" data-i18n="stng-test-desc">Olimpiada parametrlari va vaqtini boshqaring</p>
                             <form method="POST" action="{% url 'update_settings' %}" class="stng-form">
                                 {% csrf_token %}
                                 <div class="stng-field">
-                                    <label><i class="fas fa-list-ol"></i> Savollar soni</label>
+                                    <label><i class="fas fa-list-ol"></i> <span data-i18n="stng-q-count">Savollar soni</span></label>
                                     <div class="stng-input-wrap">
                                         <input type="number" name="total_questions" value="{{ settings.total_questions }}" min="5" max="100" placeholder="25">
                                         <span class="stng-unit">ta</span>
                                     </div>
                                 </div>
                                 <div class="stng-field">
-                                    <label><i class="fas fa-stopwatch"></i> Test vaqti</label>
+                                    <label><i class="fas fa-stopwatch"></i> <span data-i18n="stng-time">Test vaqti</span></label>
                                     <div class="stng-input-wrap">
                                         <input type="number" name="test_duration" value="{{ settings.test_duration }}" min="10" max="240" placeholder="60">
                                         <span class="stng-unit">min</span>
                                     </div>
                                 </div>
                                 <div class="stng-field">
-                                    <label><i class="fas fa-star"></i> Har savol uchun ball</label>
+                                    <label><i class="fas fa-star"></i> <span data-i18n="stng-points">Har savol uchun ball</span></label>
                                     <div class="stng-select-wrap">
                                         <select name="default_points">
                                             <option value="2" {% if settings.default_points == 2 %}selected{% endif %}>2 ball</option>
@@ -551,7 +572,7 @@
                                     </div>
                                 </div>
                                 <button type="submit" class="stng-btn stng-btn-primary">
-                                    <i class="fas fa-save"></i> Saqlash
+                                    <i class="fas fa-save"></i> <span data-i18n="btn-save">Saqlash</span>
                                 </button>
                             </form>
                         </div>
@@ -563,35 +584,35 @@
                             <i class="fas fa-shield-alt"></i>
                         </div>
                         <div class="stng-card-body">
-                            <h3>Admin xavfsizligi</h3>
-                            <p class="stng-desc">Admin hisobining parolini yangilang</p>
+                            <h3 data-i18n="stng-sec-title">Admin xavfsizligi</h3>
+                            <p class="stng-desc" data-i18n="stng-sec-desc">Admin hisobining parolini yangilang</p>
                             <form method="POST" action="{% url 'admin_dashboard' %}" class="stng-form" id="admin-pwd-form">
                                 {% csrf_token %}
                                 <div class="stng-field">
-                                    <label><i class="fas fa-lock"></i> Joriy parol</label>
+                                    <label><i class="fas fa-lock"></i> <span data-i18n="stng-cur-pwd">Joriy parol</span></label>
                                     <div class="stng-pwd-wrap">
                                         <input type="password" name="current_password" placeholder="••••••••" required>
                                         <button type="button" class="stng-eye" onclick="toggleAdminPwd(this)"><i class="fas fa-eye"></i></button>
                                     </div>
                                 </div>
                                 <div class="stng-field">
-                                    <label><i class="fas fa-key"></i> Yangi parol</label>
+                                    <label><i class="fas fa-key"></i> <span data-i18n="stng-new-pwd">Yangi parol</span></label>
                                     <div class="stng-pwd-wrap">
-                                        <input type="password" name="new_password" placeholder="Yangi parol" required oninput="adminPwdStrength(this.value)">
+                                        <input type="password" name="new_password" placeholder-i18n="ph-new-pwd" placeholder="Yangi parol" required oninput="adminPwdStrength(this.value)">
                                         <button type="button" class="stng-eye" onclick="toggleAdminPwd(this)"><i class="fas fa-eye"></i></button>
                                     </div>
                                     <div class="stng-strength-bar"><div id="admin-strength-fill"></div></div>
                                     <span id="admin-strength-text" class="stng-strength-label"></span>
                                 </div>
                                 <div class="stng-field">
-                                    <label><i class="fas fa-check-double"></i> Tasdiqlash</label>
+                                    <label><i class="fas fa-check-double"></i> <span data-i18n="stng-confirm-pwd">Tasdiqlash</span></label>
                                     <div class="stng-pwd-wrap">
-                                        <input type="password" name="confirm_password" placeholder="Qayta kiriting" required>
+                                        <input type="password" name="confirm_password" placeholder-i18n="ph-confirm-pwd" placeholder="Qayta kiriting" required>
                                         <button type="button" class="stng-eye" onclick="toggleAdminPwd(this)"><i class="fas fa-eye"></i></button>
                                     </div>
                                 </div>
                                 <button type="submit" class="stng-btn stng-btn-danger">
-                                    <i class="fas fa-key"></i> Parolni yangilash
+                                    <i class="fas fa-key"></i> <span data-i18n="btn-update-pwd">Parolni yangilash</span>
                                 </button>
                             </form>
                         </div>
@@ -603,14 +624,14 @@
                             <i class="fas fa-paint-brush"></i>
                         </div>
                         <div class="stng-card-body">
-                            <h3>Interfeys sozlamalari</h3>
-                            <p class="stng-desc">Ko'rinish va til parametrlarini sozlang</p>
+                            <h3 data-i18n="stng-ui-title">Interfeys sozlamalari</h3>
+                            <p class="stng-desc" data-i18n="stng-ui-desc">Ko'rinish va til parametrlarini sozlang</p>
 
                             <!-- Dark mode toggle -->
                             <div class="stng-toggle-row">
                                 <div class="stng-toggle-info">
-                                    <span class="stng-toggle-title"><i class="fas fa-moon"></i> Tungi rejim</span>
-                                    <span class="stng-toggle-sub">Qorong'i interfeys</span>
+                                    <span class="stng-toggle-title"><i class="fas fa-moon"></i> <span data-i18n="stng-dark-title">Tungi rejim</span></span>
+                                    <span class="stng-toggle-sub" data-i18n="stng-dark-sub">Qorong'i interfeys</span>
                                 </div>
                                 <label class="stng-switch">
                                     <input type="checkbox" id="admin-dark-toggle" onchange="toggleAdminDark(this.checked)">
@@ -620,7 +641,7 @@
 
                             <!-- Language -->
                             <div class="stng-field" style="margin-top:20px;">
-                                <label><i class="fas fa-language"></i> Interfeys tili</label>
+                                <label><i class="fas fa-language"></i> <span data-i18n="stng-lang-label">Interfeys tili</span></label>
                                 <div class="stng-lang-grid">
                                     <button class="stng-lang-btn active" id="lang-uz" onclick="setAdminLang('uz', this)">
                                         <span class="stng-flag">🇺🇿</span> O'zbek
@@ -642,8 +663,8 @@
                             <i class="fas fa-user-cog"></i>
                         </div>
                         <div class="stng-card-body">
-                            <h3>Admin profili</h3>
-                            <p class="stng-desc">Tizimga kirish ma'lumotlari</p>
+                            <h3 data-i18n="stng-prof-title">Admin profili</h3>
+                            <p class="stng-desc" data-i18n="stng-prof-desc">Tizimga kirish ma'lumotlari</p>
 
                             <div class="stng-profile-box">
                                 <div class="stng-avatar">
@@ -651,9 +672,9 @@
                                 </div>
                                 <div class="stng-profile-info">
                                     <div class="stng-profile-name">{{ request.user.username }}</div>
-                                    <div class="stng-profile-role">Administrator</div>
+                                    <div class="stng-profile-role" data-i18n="stng-prof-role">Administrator</div>
                                     <div class="stng-profile-meta">
-                                        <span><i class="fas fa-circle" style="color:#10b981;font-size:8px;"></i> Faol sessiya</span>
+                                        <span><i class="fas fa-circle" style="color:#10b981;font-size:8px;"></i> <span data-i18n="stng-active-session">Faol sessiya</span></span>
                                         <span><i class="fas fa-calendar-alt"></i> {{ request.user.last_login|date:"d.m.Y" }}</span>
                                     </div>
                                 </div>
@@ -661,7 +682,7 @@
 
                             <!-- Username o'zgartirish -->
                             <div class="stng-field" style="margin-top:20px;">
-                                <label><i class="fas fa-user"></i> Username</label>
+                                <label><i class="fas fa-user"></i> <span data-i18n="stng-username-label">Username</span></label>
                                 <div class="stng-input-wrap">
                                     <input type="text" id="admin-username-input" value="{{ request.user.username }}" placeholder="admin">
                                     <button class="stng-inline-btn" onclick="updateAdminUsername()">
@@ -673,11 +694,11 @@
 
                             <div class="stng-info-grid">
                                 <div class="stng-info-item">
-                                    <span class="stng-info-label">Email</span>
+                                    <span class="stng-info-label" data-i18n="stng-email-label">Email</span>
                                     <span class="stng-info-val">{{ request.user.email|default:"—" }}</span>
                                 </div>
                                 <div class="stng-info-item">
-                                    <span class="stng-info-label">Oxirgi kirish</span>
+                                    <span class="stng-info-label" data-i18n="stng-last-login">Oxirgi kirish</span>
                                     <span class="stng-info-val">{{ request.user.last_login|date:"d.m.Y H:i" }}</span>
                                 </div>
                             </div>
@@ -700,6 +721,127 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="{% static 'js/admin.js' %}"></script>
+
+
+<!-- ===== EDIT STUDENT MODAL ===== -->
+<div id="editStudentModal" class="edit-modal-overlay">
+    <div class="edit-modal-box">
+        <div class="edit-modal-header">
+            <div class="edit-modal-title">
+                <i class="fas fa-user-edit"></i>
+                <span data-i18n="edit-modal-title">O'quvchi ma'lumotlarini tahrirlash</span>
+            </div>
+            <button class="edit-modal-close" onclick="closeEditModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="edit-modal-body">
+            <input type="hidden" id="edit-student-id">
+            <div class="edit-form-grid">
+                <div class="edit-field">
+                    <label data-i18n="ph-lastname">Familiya</label>
+                    <input type="text" id="edit-last-name" placeholder-i18n="ph-lastname" placeholder="Familiya">
+                </div>
+                <div class="edit-field">
+                    <label data-i18n="ph-firstname">Ism</label>
+                    <input type="text" id="edit-first-name" placeholder-i18n="ph-firstname" placeholder="Ism">
+                </div>
+                <div class="edit-field">
+                    <label data-i18n="ph-middlename">Otasining ismi</label>
+                    <input type="text" id="edit-middle-name" placeholder-i18n="ph-middlename" placeholder="Otasining ismi">
+                </div>
+                <div class="edit-field">
+                    <label data-i18n="ph-email">Email</label>
+                    <input type="email" id="edit-email" placeholder-i18n="ph-email" placeholder="Email">
+                </div>
+                <div class="edit-field">
+                    <label data-i18n="opt-school">Maktab</label>
+                    <select id="edit-school">
+                        <option value="" disabled data-i18n="opt-school">Maktabni tanlang</option>
+                        <option value="1-maktab">1-maktab</option>
+                        <option value="2-maktab">2-maktab</option>
+                        <option value="3-maktab">3-maktab</option>
+                        <option value="4-maktab">4-maktab</option>
+                        <option value="5-maktab">5-maktab</option>
+                        <option value="6-maktab">6-maktab</option>
+                        <option value="7-maktab">7-maktab</option>
+                        <option value="8-maktab">8-maktab</option>
+                        <option value="9-maktab">9-maktab</option>
+                        <option value="10-maktab">10-maktab</option>
+                        <option value="11-maktab">11-maktab</option>
+                        <option value="12-maktab">12-maktab</option>
+                        <option value="13-maktab">13-maktab</option>
+                        <option value="14-maktab">14-maktab</option>
+                        <option value="15-maktab">15-maktab</option>
+                        <option value="16-maktab">16-maktab</option>
+                        <option value="17-maktab">17-maktab</option>
+                        <option value="18-maktab">18-maktab</option>
+                        <option value="19-maktab">19-maktab</option>
+                        <option value="20-maktab">20-maktab</option>
+                        <option value="21-maktab">21-maktab</option>
+                        <option value="22-maktab">22-maktab</option>
+                        <option value="23-maktab">23-maktab</option>
+                        <option value="24-maktab">24-maktab</option>
+                        <option value="25-maktab">25-maktab</option>
+                        <option value="26-maktab">26-maktab</option>
+                        <option value="27-maktab">27-maktab</option>
+                        <option value="28-maktab">28-maktab</option>
+                        <option value="29-maktab">29-maktab</option>
+                        <option value="30-maktab">30-maktab</option>
+                        <option value="31-maktab">31-maktab</option>
+                        <option value="32-maktab">32-maktab</option>
+                        <option value="33-maktab">33-maktab</option>
+                        <option value="34-maktab">34-maktab</option>
+                        <option value="35-maktab">35-maktab</option>
+                        <option value="36-maktab">36-maktab</option>
+                        <option value="37-maktab">37-maktab</option>
+                        <option value="38-maktab">38-maktab</option>
+                        <option value="39-maktab">39-maktab</option>
+                        <option value="40-maktab">40-maktab</option>
+                        <option value="IDUM">IDUM</option>
+                    </select>
+                </div>
+                <div class="edit-field">
+                    <label data-i18n="opt-grade">Sinf</label>
+                    <select id="edit-grade">
+                        <option value="" disabled data-i18n="opt-grade">Sinfni tanlang</option>
+                        <option value="9">9-sinf</option>
+                        <option value="10">10-sinf</option>
+                        <option value="11">11-sinf</option>
+                    </select>
+                </div>
+                <div class="edit-field">
+                    <label data-i18n="opt-subject">Fan</label>
+                    <select id="edit-subject">
+                        <option value="" disabled data-i18n="opt-subject">Fanni tanlang</option>
+                        <option value="Matematika">Matematika</option>
+                        <option value="Fizika">Fizika</option>
+                        <option value="Ona tili">Ona tili</option>
+                        <option value="Ingliz tili">Ingliz tili</option>
+                        <option value="Geografiya">Geografiya</option>
+                        <option value="Tarix">Tarix</option>
+                        <option value="Rus tili">Rus tili</option>
+                    </select>
+                </div>
+                <div class="edit-field">
+                    <label data-i18n="th-exam-date">Imtihon sanasi</label>
+                    <input type="date" id="edit-exam-date">
+                </div>
+                <div class="edit-field">
+                    <label data-i18n="th-exam-time">Imtihon vaqti</label>
+                    <input type="time" id="edit-exam-time">
+                </div>
+            </div>
+        </div>
+        <div class="edit-modal-footer">
+            <button class="edit-cancel-btn" onclick="closeEditModal()" data-i18n="btn-cancel">Bekor qilish</button>
+            <button class="edit-save-btn" onclick="saveEditStudent()" id="edit-save-btn">
+                <i class="fas fa-save"></i> <span data-i18n="btn-save">Saqlash</span>
+            </button>
+        </div>
+        <div id="edit-msg" class="edit-msg"></div>
+    </div>
+</div>
 
 </body>
 </html>

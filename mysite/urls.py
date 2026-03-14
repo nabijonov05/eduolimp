@@ -46,4 +46,5 @@ urlpatterns = [
   path('change-student-password/', views.change_student_password, name='change_student_password'),
   path('admin-update-username/', views.admin_update_username, name='admin_update_username'),
   path('generate-certificate/<int:result_id>/', views.generate_certificate, name='generate_certificate'),
+  path('edit-student/<int:student_id>/', views.edit_student, name='edit_student'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

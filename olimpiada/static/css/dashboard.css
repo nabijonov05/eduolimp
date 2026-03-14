@@ -28,16 +28,23 @@ body { background: var(--bg-light); color: var(--text-dark); }
     padding: 30px 20px;
     position: fixed;
     height: 100%;
+    z-index: 100;
+    top: 0;
+    left: 0;
+    overflow-y: auto;
 }
 
 .sidebar-header {
-    font-size: 24px;
-    font-weight: 700;
+    font-size: 22px;
+    font-weight: 800;
+    display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 50px;
+    gap: 10px;
+    margin-bottom: 46px;
+    letter-spacing: -0.3px;
 }
-
+.sidebar-header i   { flex-shrink: 0; color: #f59e0b; }
+.sidebar-header .logo-txt { white-space: nowrap; letter-spacing: 0; }
 .sidebar-header span { color: #f59e0b; }
 
 .sidebar-nav { flex: 1; }
@@ -63,13 +70,14 @@ body { background: var(--bg-light); color: var(--text-dark); }
 /* ==========================================
    3. ASOSIY KONTENT VA TOP BAR
    ========================================== */
-.main-content { margin-left: 260px; flex: 1; padding: 30px; }
+.main-content { margin-left: 260px; flex: 1; padding: 30px; min-width: 0; overflow-x: hidden; }
 
 .top-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
+    margin-bottom: 24px;
+    min-height: 52px;
 }
 
 .search-box {
@@ -352,22 +360,26 @@ body { background: var(--bg-light); color: var(--text-dark); }
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin-bottom: 30px;
-    margin-top: 80px;
+    gap: 16px;
+    margin-bottom: 24px;
+    margin-top: 0;
 }
 
 .stat-card {
     background: white;
-    padding: 20px;
+    padding: 16px 18px;
     border-radius: 15px;
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 14px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    min-width: 0;
 }
 
-.stat-card i { font-size: 30px; color: var(--primary); background: #eff6ff; padding: 15px; border-radius: 12px; }
+.stat-card > div { min-width: 0; }
+.stat-card h3 { font-size: 22px; white-space: nowrap; }
+.stat-card p  { font-size: 12px; color: #64748b; white-space: nowrap; }
+.stat-card i  { font-size: 24px; color: var(--primary); background: #eff6ff; padding: 12px; border-radius: 12px; flex-shrink: 0; }
 
 
 /* ==========================================
@@ -380,6 +392,8 @@ body { background: var(--bg-light); color: var(--text-dark); }
     padding: 25px;
     border-radius: 20px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    min-width: 0;
+    overflow: hidden;
 }
 
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -387,14 +401,19 @@ body { background: var(--bg-light); color: var(--text-dark); }
 
 .quiz-item {
     display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 15px;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
     border: 1px solid #f1f5f9;
     border-radius: 12px;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
     background: white;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 }
+.quiz-details { flex: 1; min-width: 0; overflow: hidden; }
+.quiz-details h4 { white-space: normal; word-break: break-word; }
 
 .quiz-icon { width: 50px; height: 50px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: var(--primary); }
 
@@ -580,14 +599,302 @@ body { background: var(--bg-light); color: var(--text-dark); }
 .btn-next { background: #2563eb; color: white; }
 
 
-/* ==========================================
-   11. RESPONSIVE (MEDIA SO'ROVLAR)
-   ========================================== */
+/* ===========================================
+   11. RESPONSIVE — PROFESSIONAL
+   =========================================== */
+
+/* Sections: JS boshqaradi */
+/* Section ko'rinish boshqaruvi — faqat JS o'zgartiradi */
+.content-body {
+    display: none !important;
+}
+.content-body.active-section,
+#home-section {
+    display: block !important;
+}
+
+/* My-tests layout */
+.mytests-layout {
+    display: grid;
+    grid-template-columns: 330px 1fr;
+    gap: 25px;
+}
+
+/* Test row item */
+.test-row-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 22px;
+    background: white;
+    border-radius: 15px;
+    border: 1px solid #f1f5f9;
+    transition: all .25s;
+    gap: 16px;
+}
+.test-row-item:hover {
+    border-color: #4f46e5;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(79,70,229,.1);
+}
+
+/* Hamburger */
+.d-ham {
+    display: none;
+    position: fixed; top: 14px; left: 14px; z-index: 3100;
+    width: 44px; height: 44px;
+    background: #1e293b;
+    border: none; border-radius: 12px;
+    cursor: pointer;
+    flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 5px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.35);
+    padding: 0;
+}
+.d-ham span {
+    display: block; width: 22px; height: 2px;
+    background: white; border-radius: 2px; transition: all .28s;
+}
+.d-ham.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.d-ham.is-open span:nth-child(2) { opacity: 0; }
+.d-ham.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Overlay */
+.d-ov {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.6); z-index: 2400;
+    backdrop-filter: blur(4px);
+    transition: opacity .3s;
+}
+.d-ov.is-open { display: block; }
+
+/* ≤ 1100px Tablet */
+@media (max-width: 1100px) {
+    .sidebar           { width: 220px; padding: 24px 14px; }
+    .main-content      { margin-left: 220px; padding: 24px 20px; }
+    .data-grid         { grid-template-columns: 1fr; }
+    .mytests-layout    { grid-template-columns: 250px 1fr; }
+    .stats-grid        { margin-top: 0; }
+    .charts-container  { grid-template-columns: 1fr !important; gap: 14px; }
+    .chart-growth-card { height: 220px !important; }
+    .chart-skill-card  { padding: 16px !important; }
+    .search-box        { width: 260px; }
+}
+@media (max-width: 900px) {
+    .mytests-layout    { grid-template-columns: 1fr; }
+    .optional-tests-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* ≤ 768px Mobil */
 @media (max-width: 768px) {
-    .options-grid { grid-template-columns: 1fr; }
-    .test-content { padding: 20px; }
-    .main-content { margin-left: 0; padding: 15px; }
-    .sidebar { display: none; }
+
+    .d-ham { display: flex; }
+
+    .sidebar {
+        position: fixed; left: -280px; top: 0;
+        width: 260px; height: 100%;
+        z-index: 2500 !important;
+        padding: 24px 16px; padding-top: 68px;
+        transition: left .3s cubic-bezier(.4,0,.2,1);
+        box-shadow: none;
+        overflow-y: auto;
+    }
+    .sidebar.is-open {
+        left: 0;
+        box-shadow: 6px 0 30px rgba(0,0,0,.4);
+    }
+
+    .main-content { margin-left: 0 !important; padding: 72px 14px 28px; }
+
+    /* Top bar — hamburger chap, profil o'ng, search pastda to'liq */
+    .top-bar {
+        display: grid;
+        grid-template-columns: 44px 1fr 44px;
+        grid-template-rows: auto auto;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 18px;
+        flex-wrap: unset;
+    }
+    /* Hamburger — grid da 1-chi ustun (CSS da emas, u fixed) */
+    /* Profil — o'ng tomonda */
+    .user-profile-wrapper {
+        grid-column: 3;
+        grid-row: 1;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        height: 44px;
+    }
+    .user-profile-trigger {
+        height: 44px;
+        padding: 4px 4px;
+        border-radius: 50%;
+        border: none;
+        background: none;
+        box-shadow: none;
+    }
+    .user-avatar-mini { width: 40px; height: 40px; }
+    /* Qidiruv — ikkinchi qatorda to'liq */
+    .search-box {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        width: 100% !important;
+        max-width: 100% !important;
+        order: unset;
+        flex: unset;
+        margin-top: 0;
+        box-sizing: border-box;
+    }
+    .user-meta, .toggle-icon { display: none; }
+
+    /* Stats — 3 ta teng qatorda */
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px; margin-top: 0;
+    }
+    .stat-card          { padding: 10px 12px; gap: 8px; flex-direction: column; align-items: flex-start; }
+    .stat-card i        { font-size: 18px; padding: 8px; border-radius: 8px; }
+    .stat-card h3       { font-size: 20px; white-space: nowrap; }
+    .stat-card p        { font-size: 10px; white-space: normal; line-height: 1.3; }
+
+    /* Data grid */
+    .data-grid          { grid-template-columns: 1fr; gap: 14px; }
+    .active-quizzes, .recent-results { padding: 16px; }
+
+    /* Quiz item — mobil */
+    .quiz-item          { flex-wrap: nowrap; gap: 10px; align-items: center; overflow: visible; }
+    .quiz-icon          { flex-shrink: 0; width: 44px; height: 44px; }
+    .quiz-details       { flex: 1; min-width: 0; overflow: hidden; }
+    .quiz-details h4    { font-size: 14px; white-space: normal !important; word-break: break-word; }
+    .grade-questions-text { font-size: 11px; }
+    .quiz-action {
+        flex-shrink: 0; min-width: 90px; max-width: 110px;
+        margin-left: 0; align-items: flex-end; flex-direction: column;
+    }
+    .quiz-action .start-btn {
+        width: 100%; text-align: center; margin-left: 0;
+        padding: 8px 10px; font-size: 12px;
+    }
+
+    /* My tests */
+    .mytests-layout     { grid-template-columns: 1fr; gap: 16px; }
+    .test-row-item {
+        flex-direction: column; align-items: flex-start;
+        padding: 16px; gap: 12px;
+    }
+    .test-row-item > div:last-child { width: 100%; }
+    .test-row-item > div:last-child button { width: 100%; }
+
+    /* Badge to'liq ko'rinsin */
+    .test-row-item span[style*="font-size: 10px"] { white-space: nowrap; }
+
+    /* Optional */
+    .optional-tests-grid { grid-template-columns: 1fr !important; }
+
+    /* Charts */
+    .charts-container {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+    }
+    .chart-growth-card { height: 200px !important; }
+    .chart-skill-card  { padding: 14px !important; }
+    .chart-skill-card > div[style*="height: 200px"] { height: 150px !important; }
+
+    /* Leaderboard podium — ustma-ust emas, yonma-yon */
+    .top-podium {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: center !important;
+        align-items: flex-end !important;
+        gap: 12px !important;
+        flex-wrap: nowrap !important;
+        margin: 20px 0 !important;
+    }
+    .top-podium { gap: 8px !important; }
+    .podium-item {
+        flex: 1 !important;
+        max-width: 30vw !important;
+        width: auto !important;
+        padding: 10px 6px !important;
+        font-size: 11px;
+        transform: none !important;
+    }
+    .rank-gold { transform: none !important; }
+    .podium-item > div[style*="font-weight: bold"],
+    .podium-item > div[style*="font-weight:bold"] {
+        font-size: 11px !important;
+        word-break: break-word !important;
+        white-space: normal !important;
+        line-height: 1.2 !important;
+    }
+    .podium-item > div[style*="font-size: 18px"] { font-size: 14px !important; }
+    .podium-avatar-initials { width: 46px; height: 46px; font-size: 15px; }
+    .podium-item > div > img {
+        width: 46px !important; height: 46px !important; border-radius: 50%;
+    }
+
+    /* Jadvallar scroll */
+    .leaderboard-card   { overflow-x: auto; }
+    .leaderboard-card > table { min-width: 360px; }
+    #resultsTable       { min-width: 500px; }
+    .tbl-wrap           { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* Test modal */
+    .test-container {
+        border-radius: 0; height: 100dvh;
+        margin: 0; max-width: 100%;
+    }
+    .test-header        { padding: 12px 14px; }
+    .test-content       { padding: 16px; }
+    .test-footer        { padding: 12px 14px; }
+    .q-text             { font-size: 16px; margin-bottom: 18px; }
+    .options-grid       { grid-template-columns: 1fr; gap: 10px; }
+    .option-item        { padding: 13px 16px; font-size: 14px; }
+    .btn-nav            { padding: 10px 14px; font-size: 13px; }
+
+    /* Settings */
+    #settings-section .leaderboard-card {
+        max-width: 100% !important; padding: 18px !important;
+    }
+    #settings-section .leaderboard-card > div {
+        flex-direction: column !important;
+        gap: 14px; align-items: flex-start !important;
+    }
+
+    /* Results header */
+    .results-toolbar {
+        flex-direction: column !important; gap: 8px !important;
+    }
+    .results-toolbar button,
+    .results-toolbar input { width: 100%; }
+
+    /* Dropdown */
+    .modern-dropdown { width: 240px; right: -4px; }
+
+    /* Password modal */
+    #passwordModal > div { margin: 14px !important; padding: 22px 16px !important; }
+
+    /* Toast */
+    .toast-notification { width: calc(100vw - 28px); }
+    #certToast { right: 10px; bottom: 10px; width: calc(100vw - 20px); min-width: unset; }
+}
+
+/* ≤ 480px Kichik telefon */
+@media (max-width: 480px) {
+    .stats-grid         { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .stat-card          { padding: 8px 10px; gap: 6px; }
+    .stat-card h3       { font-size: 16px; }
+    .stat-card i        { padding: 7px; font-size: 16px; }
+
+    .podium-item        { width: 82px !important; padding: 10px 5px !important; }
+    .podium-avatar-initials { width: 44px; height: 44px; font-size: 15px; }
+
+    .nav-box            { width: 34px; height: 34px; min-width: 34px; font-size: 12px; }
+    .test-timer         { padding: 6px 10px; font-size: 12px; }
+    .section-header h2  { font-size: 16px; }
+    .quiz-icon          { width: 40px; height: 40px; font-size: 16px; }
 }
 
 
@@ -656,24 +963,45 @@ body { background: var(--bg-light); color: var(--text-dark); }
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    gap: 20px;
-    margin: 40px 0;
+    gap: 12px;
+    margin: 28px 0;
+    flex-wrap: nowrap;
+    width: 100%;
 }
 
 .podium-item {
     text-align: center;
-    width: 150px;
+    flex: 1;
+    max-width: 120px;
+    min-width: 0;
     background: white;
-    padding: 20px;
-    border-radius: 20px;
+    padding: 14px 8px;
+    border-radius: 18px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    word-break: break-word;
+    overflow: hidden;
+}
+/* Ism */
+.podium-item > div:not([style*="color"]):not([style*="margin"]) {
+    font-size: 12px;
+    word-break: break-word;
+    white-space: normal;
+    line-height: 1.3;
+    font-weight: 600;
+}
+.podium-item > div[style*="font-weight: bold"] {
+    font-size: 12px !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    line-height: 1.3 !important;
 }
 
 /* Podium o'rinlari tartibi */
 .rank-gold {
     order: 2;
-    transform: scale(1.1);
-    border: 2px solid #ffd700;
+    transform: none;
+    border: 3px solid #ffd700;
+    box-shadow: 0 6px 20px rgba(255,215,0,.3);
 }
 
 .rank-silver {
@@ -836,3 +1164,189 @@ input:checked + .slider { background:#2563eb; }
 input:checked + .slider:before { transform:translateX(24px); }
 .slider.round { border-radius:28px; }
 .slider.round:before { border-radius:50%; }
+/* Dark mode mobile */
+body.dark-mode .d-ham           { background: #334155; }
+body.dark-mode .test-row-item   { background: #1e293b !important; border-color: #334155 !important; }
+body.dark-mode .test-row-item h4 { color: #f1f5f9 !important; }
+body.dark-mode .podium-item     { background: #1e293b; }
+
+
+/* Results jadval mobil */
+@media (max-width: 768px) {
+    /* Results jadval action ustun */
+    #resultsTable td:last-child { min-width: unset !important; }
+    #resultsTable .btn-detail   { padding: 6px 12px; font-size: 11px; }
+
+    /* Charts container */
+    #results-section .leaderboard-card[style*="height: 350px"] {
+        height: 260px !important;
+    }
+
+    /* Reyting table */
+    #reyting-section .leaderboard-card { overflow-x: auto; }
+    #reyting-section .leaderboard-card table { min-width: 320px; }
+
+    /* Section headers */
+    #reyting-section .section-header h2 { font-size: 22px !important; }
+    #results-section .section-header h2 { font-size: 18px !important; }
+
+    /* Content sectionlar ustki padding */
+    .content-body { padding-top: 0 !important; }
+    #home-section  { padding-top: 0 !important; }
+}
+
+@media (max-width: 480px) {
+    /* Natijalar toolbar */
+    .results-toolbar { flex-direction: column !important; }
+    .results-toolbar button,
+    .results-toolbar input { width: 100% !important; box-sizing: border-box; }
+
+    /* Reyting podium yanada kichikroq */
+    .podium-item { width: 76px !important; padding: 8px 4px !important; }
+    .podium-item > div[style*="font-weight: bold"] { font-size: 11px !important; }
+    .podium-item > div[style*="font-size: 18px"]   { font-size: 14px !important; }
+}
+
+
+
+/* ── Grafik mobil to'liq sig'ish ─────────────────────────────── */
+@media (max-width: 600px) {
+    .charts-container {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+    }
+    .chart-growth-card {
+        height: 180px !important;
+        padding: 14px !important;
+    }
+    .chart-skill-card {
+        padding: 14px !important;
+    }
+    /* Skill chart doirasi kichikroq */
+    .chart-skill-card canvas {
+        max-height: 130px !important;
+    }
+    /* Results section stats 2 ustun */
+    #results-section .stats-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+}
+
+/* ── Ekran o'lchamini barqarorlashtirish ──────────────────────── */
+/* Barcha sectionlar bir xil tuzilma */
+.content-body {
+    min-height: 0;
+    width: 100%;
+}
+
+/* Sidebar ochilganda content kengligini saqlash */
+body { overflow-x: hidden; }
+
+/* Main content sidebar ochilganda siljimaydi */
+.main-content {
+    position: relative;
+    transition: none !important;
+}
+
+/* My Tests karta ichidagi test qatorlari */
+.main-card-premium > div:last-child {
+    padding: 20px !important;
+}
+.main-card-premium > div:last-child > div {
+    display: grid;
+    gap: 14px;
+}
+
+/* Table responsive */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+}
+.table-responsive table {
+    min-width: 420px;
+}
+
+/* Test tahlil bo'limi */
+.recent-results .result-item {
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.recent-results .result-item > span:first-child {
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+}
+.recent-results .btn-detail {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* Data-grid da recent-results scroll bo'lsin */
+@media (max-width: 768px) {
+    .data-grid .recent-results:last-child table {
+        min-width: 400px;
+    }
+    .data-grid .recent-results:last-child {
+        overflow-x: auto;
+        padding: 14px;
+    }
+    /* test-row-item mobil: to'liq border ko'rinsin */
+    .test-row-item {
+        width: 100%;
+        box-sizing: border-box;
+        overflow: visible;
+    }
+    /* main-card-premium ichki padding */
+    .main-card-premium > div:last-child {
+        padding: 14px !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .chart-skill-card { min-height: 240px !important; padding: 14px 10px !important; }
+    .chart-skill-card > div[style*="height: 180px"] { height: 150px !important; }
+    .chart-skill-card canvas { max-width: 130px !important; max-height: 130px !important; }
+}
+
+/* Quiz item sana/vaqt kichikroq */
+.quiz-item .quiz-details > div:last-child {
+    font-size: 10px !important;
+    gap: 6px !important;
+}
+.quiz-item .quiz-details > div:last-child span {
+    font-size: 10px !important;
+}
+
+/* Quiz action tugma va yozuvlar kichikroq */
+@media (max-width: 768px) {
+    .quiz-action p {
+        font-size: 9px !important;
+        margin-right: 0 !important;
+        text-align: right;
+        line-height: 1.3;
+    }
+    .quiz-action .start-btn {
+        font-size: 11px !important;
+        padding: 7px 8px !important;
+    }
+    .quiz-action {
+        min-width: 80px !important;
+        max-width: 95px !important;
+    }
+}
+
+/* Hamburger grid placeholder */
+.ham-placeholder {
+    display: none;
+}
+@media (max-width: 768px) {
+    .ham-placeholder {
+        display: block;
+        width: 44px;
+        height: 44px;
+        grid-column: 1;
+        grid-row: 1;
+        flex-shrink: 0;
+    }
+}

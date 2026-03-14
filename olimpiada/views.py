@@ -733,6 +733,45 @@ from django.shortcuts import redirect
 from django.urls import reverse
 
 
+
+#===================================================================================================================
+def edit_student(request, student_id):
+    """O'quvchi ma'lumotlarini tahrirlash (AJAX)"""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Faqat POST'}, status=405)
+
+    student = get_object_or_404(Student, id=student_id)
+    try:
+        data = json.loads(request.body)
+        student.first_name  = data.get('first_name',  student.first_name).strip()
+        student.last_name   = data.get('last_name',   student.last_name).strip()
+        student.middle_name = data.get('middle_name', student.middle_name).strip()
+        student.email       = data.get('email',       student.email).strip()
+        student.school      = data.get('school',      student.school)
+        student.grade       = data.get('grade',       student.grade)
+        student.subject     = data.get('subject',     student.subject)
+        student.exam_date   = data.get('exam_date',   str(student.exam_date))
+        student.exam_time   = data.get('exam_time',   str(student.exam_time))
+        student.save()
+        return JsonResponse({
+            'status': 'success',
+            'student': {
+                'id':          student.id,
+                'first_name':  student.first_name,
+                'last_name':   student.last_name,
+                'middle_name': student.middle_name,
+                'email':       student.email,
+                'school':      student.school,
+                'grade':       student.grade,
+                'subject':     student.subject,
+                'exam_date':   str(student.exam_date),
+                'exam_time':   str(student.exam_time),
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+#===================================================================================================================
+
 def bulk_update_students(request):
     if request.method == 'POST':
         # Belgilangan (checked) o'quvchilar ID ro'yxati
