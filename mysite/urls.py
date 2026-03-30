@@ -14,6 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.contrib import admin
 from django.urls import path
 from olimpiada import views
 from django.conf import settings
@@ -47,4 +48,15 @@ urlpatterns = [
   path('admin-update-username/', views.admin_update_username, name='admin_update_username'),
   path('generate-certificate/<int:result_id>/', views.generate_certificate, name='generate_certificate'),
   path('edit-student/<int:student_id>/', views.edit_student, name='edit_student'),
+  path('list-test-images/', views.list_test_images, name='list_test_images'),
+  path('delete-test-image/', views.delete_test_image, name='delete_test_image'),
+  path('auth/google/',          views.google_login_redirect, name='google_login'),
+  path('auth/google/callback/', views.google_login_callback, name='google_callback'),
+  path('sessions/',              views.get_active_sessions,  name='get_active_sessions'),
+  path('sessions/terminate/',    views.terminate_session,     name='terminate_session'),
+  path('sessions/terminate-all/',views.terminate_all_sessions,name='terminate_all_sessions'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

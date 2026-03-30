@@ -7,6 +7,48 @@
     <title>Dashboard | EduOlimp</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+
+    <script>
+    // ===== SAHIFA YUKLANISHIDAN OLDIN TO'G'RI SECTIONNI KO'RSATISH =====
+    // Bu script <head> da ishlaydi — hech qanday sakrash bo'lmaydi
+    (function() {
+        var sectionMap = {
+            'home'    : 'home-section',
+            'my-tests': 'my-tests',
+            'results' : 'results-section',
+            'reyting' : 'reyting-section',
+            'settings': 'settings-section',
+        };
+        var validTabs = Object.keys(sectionMap);
+
+        // URL dan ?tab= ni o'qiymiz
+        var params = new URLSearchParams(window.location.search);
+        var tab = params.get('tab') || 'home';
+        if (validTabs.indexOf(tab) === -1) tab = 'home';
+
+        // DOMContentLoaded kutmasdan, lekin DOM tayyor bo'lganda ishlasin
+        document.addEventListener('DOMContentLoaded', function() {
+            // Barcha sectionlarni yashiramiz
+            validTabs.forEach(function(key) {
+                var el = document.getElementById(sectionMap[key]);
+                if (el) el.style.setProperty('display', 'none', 'important');
+            });
+
+            // Faqat kerakli sectionni ko'rsatamiz
+            var target = document.getElementById(sectionMap[tab]);
+            if (target) target.style.setProperty('display', 'block', 'important');
+
+            // Sidebar active linkni yangilaymiz
+            document.querySelectorAll('.sidebar-nav a[onclick]').forEach(function(l) {
+                l.classList.remove('active');
+                var oc = l.getAttribute('onclick') || '';
+                if (oc.indexOf("'" + tab + "'") !== -1 || oc.indexOf('"' + tab + '"') !== -1) {
+                    l.classList.add('active');
+                }
+            });
+        }, { once: true });
+    })();
+    </script>
 </head>
 <body>
     <button class="d-ham" id="dHam" onclick="dToggle()"><span></span><span></span><span></span></button>
@@ -70,7 +112,7 @@
                                 </label>
                             </div>
                             <h4 class="user-full-name">{{ student.first_name }} {{ student.last_name }}</h4>
-                            <span class="user-id">ID: #{{ student.id|default:"1" }}</span>
+
                         </div>
 
                         <div class="dropdown-content">
@@ -553,12 +595,12 @@
                                 </div>
                             </div>
 
-                            <div style="display: flex; justify-content: space-around; margin-top: 20px; padding-top: 15px; border-top: 1px solid #f1f5f9;">
+                            <div style="display: flex; justify-content: center; gap: 32px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #f1f5f9;">
                                 <div style="text-align: center;">
                                     <div style="font-size: 11px; color: #94a3b8;" data-i18n="lbl-quality">Quality</div>
                                     <div style="font-size: 13px; font-weight: 700; color: #2563eb;" data-i18n="lbl-high">High</div>
                                 </div>
-                                <div style="width: 1px; background: #f1f5f9;"></div>
+                                <div style="width: 1px; background: #e2e8f0;"></div>
                                 <div style="text-align: center;">
                                     <div style="font-size: 11px; color: #94a3b8;">Status</div>
                                     <div style="font-size: 13px; font-weight: 700; color: #2563eb;" data-i18n="lbl-active">Active</div>
@@ -572,11 +614,13 @@
                     <div class="leaderboard-card" style="margin-top: 35px;">
                         <div style="padding: 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                             <h3 style="font-size: 18px;" data-i18n="results-history">Natijalar tarixi</h3>
+
                             <div class="results-toolbar" style="display: flex; gap: 10px;">
+                                <input type="text" id="subjectSearch" onkeyup="filterResultsTable()" placeholder="Search subject..." data-i18n="search-subj-ph" style="padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px;">
                                 <button onclick="downloadAllCertificates()" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
                                     <i class="fas fa-file-download"></i> <span data-i18n="all-certs">All Certificates</span>
                                 </button>
-                                <input type="text" id="subjectSearch" onkeyup="filterResultsTable()" placeholder="Search subject..." data-i18n="search-subj-ph" style="padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px;">
+
                             </div>
                         </div>
 
@@ -748,6 +792,24 @@
                             </select>
                         </div>
                     </div>
+
+                    <!-- ===== FAOL SEANSLAR ===== -->
+                    <div class="leaderboard-card sessions-card" style="padding: 30px; max-width: 600px; margin-top: 24px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid #f1f5f9;">
+                            <div>
+                                <h4 style="margin:0 0 5px;" data-i18n="sessions-title">Faol seanslar</h4>
+                                <p style="font-size:13px; color:#64748b; margin:0;" data-i18n="sessions-desc">Hisobingizga kirgan qurilmalar ro'yxati</p>
+                            </div>
+                            <button onclick="terminateAllSessions()" class="sessions-end-all-btn" data-i18n="sessions-end-all">
+                                <i class="fas fa-sign-out-alt"></i> Barchasini tugatish
+                            </button>
+                        </div>
+                        <div id="sessionsContainer">
+                            <div class="sessions-loading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </div>
                 </section>
             <div>
         </main>
@@ -765,8 +827,13 @@
                 <div class="progress-fill" id="progressBar"></div>
             </div>
 
+            <!-- Nav raqamlar - questionArea DAN TASHQARIDA (scroll muammo hal) -->
+            <div class="question-nav-container" id="navContainer">
+                <div class="question-nav-scroll" id="navScroll"></div>
+            </div>
+
             <div class="test-content" id="questionArea">
-                </div>
+            </div>
 
             <div class="test-footer">
                 <button class="btn-nav btn-prev" id="prevBtn" onclick="changeQuestion(-1)" disabled>

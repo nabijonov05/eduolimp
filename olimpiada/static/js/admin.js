@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- ASOSIY FUNKSIYA: Bo'limni faollashtirish ---
-    window.activateSection = function(key) {
+    window.activateSection = function(key, subject) {
         if (!sectionMap[key]) key = 'dashboard';
         localStorage.setItem('activeAdminTab', key);
 
@@ -48,16 +48,29 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(renderAnalytics, 150);
         }
 
-        // 6. Mobile — sidebarni yopish
+        // 6. Test bo'limida fan avtomatik tanlansin
+        if (key === 'test') {
+            // URL > localStorage > hech narsa
+            const activeSubject = subject || localStorage.getItem('activeSubject') || '';
+            if (activeSubject) {
+                const card = document.querySelector(`.subject-card[data-subject-key="${activeSubject}"]`);
+                if (card) {
+                    selectSubject(activeSubject, card, true);
+                }
+            }
+        }
+
+        // 7. Mobile — sidebarni yopish
         closeAdminSidebar();
     };
 
     // --- 1-QADAM: Sahifa yuklanganda holatni aniqlash ---
     const urlParams = new URLSearchParams(window.location.search);
     const urlSection = urlParams.get('section');
+    const urlSubject = urlParams.get('subject');
     const savedSection = localStorage.getItem('activeAdminTab');
     const initialSection = urlSection || savedSection || 'dashboard';
-    activateSection(initialSection);
+    activateSection(initialSection, urlSubject || '');
 
     // --- 2-QADAM: Nav linklarga click — data-key ishlatiladi ---
     navLinks.forEach((link) => {
@@ -66,14 +79,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const key = this.getAttribute('data-key') || 'dashboard';
             const newUrl = `${window.location.pathname}?section=${key}`;
             window.history.pushState({ section: key }, '', newUrl);
-            activateSection(key);
+            // Test bo'limidan boshqa joyga o'tganda activeSubject ni tozalash
+            if (key !== 'test') localStorage.removeItem('activeSubject');
+            activateSection(key, '');
         });
     });
 
-    // --- 3-QADAM: Brauzer orqaga tugmasi ---
+    // --- 3-QADAM: Brauzer orqaga/oldinga tugmasi ---
     window.addEventListener('popstate', () => {
-        const section = new URLSearchParams(window.location.search).get('section') || 'dashboard';
-        activateSection(section);
+        const params  = new URLSearchParams(window.location.search);
+        const section = params.get('section') || 'dashboard';
+        const subject = params.get('subject') || '';
+        activateSection(section, subject);
     });
 });
 
@@ -117,7 +134,7 @@ function closeAdminSidebar() {
 
 
 // Fan tanlanganda sinflarni chiqarish va statusni tekshirish
-function selectSubject(subjectName, element) {
+function selectSubject(subjectName, element, skipHistory) {
     // 1. Kartochkalarni rangini yangilash
     document.querySelectorAll('.subject-card').forEach(card => card.classList.remove('selected'));
     element.classList.add('selected');
@@ -130,36 +147,62 @@ function selectSubject(subjectName, element) {
     selectionArea.style.display = 'block';
     document.getElementById('selected-subject-title').innerHTML = `<i class="fas fa-graduation-cap"></i> ${subjectName} ${adminT('subj-select-title')}`;
 
-    // 4. BAZADAGI STATUSNI TEKSHIRISH
+    // 4. URL va localStorage ga saqlash
+    localStorage.setItem('activeSubject', subjectName);
+    if (!skipHistory) {
+        const newUrl = `${window.location.pathname}?section=test&subject=${encodeURIComponent(subjectName)}`;
+        window.history.pushState({ section: 'test', subject: subjectName }, '', newUrl);
+    }
+
+    // 5. BAZADAGI STATUSNI TEKSHIRISH
     [9, 10, 11].forEach(grade => {
         const statusSpan = document.getElementById(`file-name-${grade}`);
         const key = `${subjectName}_${grade}`;
 
-        // uploadedStatus mavjudligini tekshiramiz
         if (typeof uploadedStatus !== 'undefined' && uploadedStatus[key]) {
             statusSpan.innerText = "✅ " + adminT("file-uploaded");
             statusSpan.style.color = "#2ecc71";
             statusSpan.style.fontWeight = "bold";
+            const row = document.querySelector(`.class-row[data-grade="${grade}"]`);
+            if (row) {
+                const lbl = row.querySelector('.upload-label');
+                if (lbl) lbl.classList.add('disabled');
+            }
         } else {
             statusSpan.innerText = adminT("file-not-selected");
             statusSpan.style.color = "#888";
             statusSpan.style.fontWeight = "normal";
+            const row = document.querySelector(`.class-row[data-grade="${grade}"]`);
+            if (row) {
+                const lbl = row.querySelector('.upload-label');
+                if (lbl) lbl.classList.remove('disabled');
+            }
         }
     });
 
-    // 5. Ekranni pastga surish (TO'G'RILANDI)
+    // 6. Har sinf uchun serverdan rasm sonini yangilash
+    [9, 10, 11].forEach(grade => {
+        refreshBadgeForGrade(subjectName, grade);
+    });
+
+    // 7. Ekranni pastga surish
     setTimeout(() => {
         selectionArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
 }
 
-// Fayl tanlanganda ko'rinishni yangilash
-function handleFileUpload(input, targetId) {
+// Fayl tanlanganda ko'rinishni yangilash va label bloklash
+function handleFileUpload(input, targetId, labelId) {
     const fileNameDisplay = document.getElementById(targetId);
     if (input.files.length > 0) {
         fileNameDisplay.innerText = "✅ " + adminT("file-selected") + ": " + input.files[0].name;
         fileNameDisplay.style.color = "#2ecc71";
         fileNameDisplay.style.fontWeight = "bold";
+        // Fayl yuklash tugmasini bloklash
+        if (labelId) {
+            const lbl = document.getElementById(labelId);
+            if (lbl) lbl.classList.add('disabled');
+        }
     }
 }
 
@@ -194,6 +237,10 @@ function removeFile(spanId, btnElement) {
 
                 const fileInput = parentRow.querySelector('input[type="file"]');
                 if (fileInput) fileInput.value = "";
+
+                // Fayl o'chirilgandan keyin upload tugmasini qayta ochish
+                const lbl = parentRow.querySelector('.upload-label');
+                if (lbl) lbl.classList.remove('disabled');
 
                 if (typeof uploadedStatus !== 'undefined') {
                     uploadedStatus[`${subject}_${grade}`] = false;
@@ -1152,4 +1199,136 @@ function updateStudentRow(s) {
                 `openEditModal(${s.id},'${s.first_name}','${s.last_name}','${s.middle_name}','${s.email}','${s.school}','${s.grade}','${s.subject}','${s.exam_date}','${s.exam_time.substring(0,5)}')`));
         }
     });
+}
+
+/* ================================================================
+   RASM YUKLASH — badge, modal, o'chirish
+   (admin.html dan ko'chirildi — sweetalert2 keyin yuklangani uchun
+    bu funksiyalar window.onload dan keyin ishlaydigan qilib yozildi)
+   ================================================================ */
+
+// Badge yangilash — fayl tanlanganda
+function handleImagesUpload(input, badgeId) {
+    var badge = document.getElementById(badgeId);
+    if (!badge) return;
+    var count = input.files ? input.files.length : 0;
+    badge.textContent = count;
+    if (count > 0) {
+        badge.classList.add('has-images');
+    } else {
+        badge.classList.remove('has-images');
+    }
+}
+
+// Serverdan bir sinf uchun rasm sonini olib badge ni yangilash
+async function refreshBadgeForGrade(subject, grade) {
+    var badge = document.getElementById('img-badge-' + grade);
+    if (!badge) return;
+    try {
+        var resp = await fetch('/list-test-images/?subject=' + encodeURIComponent(subject) + '&grade=' + grade);
+        var data = await resp.json();
+        var count = (data.images || []).length;
+        badge.textContent = count;
+        if (count > 0) {
+            badge.classList.add('has-images');
+        } else {
+            badge.classList.remove('has-images');
+        }
+    } catch(e) {}
+}
+
+window._refreshBadgeForGrade = refreshBadgeForGrade;
+
+// Rasm ro'yxati modalini ochish
+async function openImagesModal(grade) {
+    var subjectInput = document.getElementById('selected-subject-input');
+    var subject = subjectInput ? subjectInput.value.trim() : '';
+    if (!subject || !grade) {
+        Swal.fire('Xato', 'Avval fanni tanlang', 'warning');
+        return;
+    }
+    Swal.fire({
+        title: '<i class="fas fa-images" style="color:#10b981"></i> ' + subject + ' \u2014 ' + grade + '-sinf rasmlari',
+        html: '<div style="text-align:center;padding:30px"><i class="fas fa-spinner fa-spin fa-2x" style="color:#10b981"></i><p style="margin-top:10px;color:#64748b">Yuklanmoqda...</p></div>',
+        showConfirmButton: false,
+        showCloseButton: true,
+        width: 650,
+        didOpen: async function() {
+            try {
+                var url = '/list-test-images/?subject=' + encodeURIComponent(subject) + '&grade=' + grade;
+                var resp = await fetch(url);
+                var data = await resp.json();
+                var images = data.images || [];
+
+                if (images.length === 0) {
+                    Swal.update({
+                        html: '<div style="text-align:center;padding:40px;color:#94a3b8"><i class="fas fa-image fa-3x" style="opacity:0.3"></i><p style="margin-top:15px;font-size:1rem">Hozircha rasmlar yuklanmagan</p></div>'
+                    });
+                    return;
+                }
+
+                var rows = images.map(function(img) {
+                    return '<div class="img-modal-row" id="imgrow-' + encodeURIComponent(img.name) + '" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid #f1f5f9;transition:0.2s;">' +
+                        '<img src="' + img.url + '" onerror="this.src=\'\';" style="width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;flex-shrink:0">' +
+                        '<span style="flex:1;font-size:0.88rem;color:#334155;word-break:break-all">' + img.name + '</span>' +
+                        '<button onclick="deleteTestImage(\'' + img.name.replace(/'/g, "\\'") + '\',\'' + subject.replace(/'/g, "\\'") + '\',' + grade + ')" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:white;border:none;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:600;flex-shrink:0;">' +
+                        '<i class="fas fa-trash-alt"></i> O&#39;chirish</button>' +
+                        '</div>';
+                }).join('');
+
+                Swal.update({
+                    html: '<div style="text-align:left;margin-bottom:12px;color:#64748b;font-size:0.85rem">Jami: <b style="color:#10b981">' + images.length + ' ta</b> rasm</div>' +
+                          '<div style="max-height:420px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:10px">' + rows + '</div>'
+                });
+            } catch(e) {
+                Swal.update({ html: '<p style="color:#ef4444">Server bilan bog&#39;liqda xato yuz berdi</p>' });
+            }
+        }
+    });
+}
+
+// Rasmni o'chirish
+async function deleteTestImage(filename, subject, grade) {
+    var result = await Swal.fire({
+        icon: 'warning',
+        title: "O&#39;chirasizmi?",
+        html: '<span style="font-size:0.9rem;color:#64748b;word-break:break-all">' + filename + '</span>',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: "<i class='fas fa-trash-alt'></i> Ha, o'chir",
+        cancelButtonText: 'Bekor qilish'
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+        var resp = await fetch('/delete-test-image/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({ filename: filename, subject: String(subject), grade: String(grade) })
+        });
+        var data = await resp.json();
+        if (data.status === 'success') {
+            var row = document.getElementById('imgrow-' + encodeURIComponent(filename));
+            if (row) {
+                row.style.opacity = '0';
+                row.style.transition = '0.3s';
+                setTimeout(function() { row.remove(); }, 300);
+            }
+            var countEl = document.querySelector('.swal2-html-container b');
+            if (countEl) {
+                var cur = parseInt(countEl.textContent) - 1;
+                countEl.textContent = cur + ' ta';
+                if (cur === 0) openImagesModal(grade);
+            }
+            refreshBadgeForGrade(String(subject), grade);
+        } else {
+            Swal.fire('Xato!', data.message || "O'chirishda xato", 'error');
+        }
+    } catch(e) {
+        Swal.fire('Xato!', "Server bilan bog'liqda xato", 'error');
+    }
 }

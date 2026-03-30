@@ -1812,3 +1812,25 @@ body.admin-dark .edit-cancel-btn:hover { background: #1e293b; color: #e2e8f0; }
     .edit-modal-footer { padding: 12px 16px; }
     .edit-modal-header { padding: 16px; }
 }
+/* ==========================================
+   RASMLAR RO'YXATI TUGMASI
+   ========================================== */
+.img-list-btn {
+    background: #eff6ff;
+    color: #3b82f6;
+    border: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+    margin-left: 4px;
+}
+.img-list-btn:hover {
+    background: #3b82f6;
+    color: white;
+    transform: scale(1.08);
+}

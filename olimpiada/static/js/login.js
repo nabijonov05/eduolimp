@@ -2,7 +2,7 @@
 function initAuth() {
     const passwordInput = document.getElementById('password');
     const togglePassword = document.getElementById('togglePassword');
-    const loginForm = document.getElementById('registerForm');
+    const loginForm = document.getElementById('loginForm');
 
     // 1. Parol ko'rsatish/yashirish
     if (togglePassword && passwordInput) {
@@ -20,7 +20,7 @@ function initAuth() {
     if (loginForm) {
         loginForm.addEventListener('submit', function(e) {
             // Asosiy tugmani qidiramiz
-            const btn = this.querySelector('.main-btn');
+            const btn = this.querySelector('.login-btn');
 
             if (btn) {
                 // Tugma matnini o'zgartirish

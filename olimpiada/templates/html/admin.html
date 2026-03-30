@@ -8,6 +8,58 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/admin.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+    /* Rasm yuklash — kichik ikonka tugma */
+    .img-icon-btn {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        cursor: pointer;
+        font-size: 15px;
+        margin-left: 6px;
+        flex-shrink: 0;
+        transition: 0.2s;
+        vertical-align: middle;
+    }
+    .img-icon-btn:hover {
+        background: linear-gradient(135deg, #059669, #047857);
+        transform: scale(1.08);
+    }
+    .img-count-badge {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        background: #cbd5e1;
+        color: white;
+        font-size: 10px;
+        font-weight: 700;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        transition: background 0.25s, transform 0.2s;
+    }
+    .img-count-badge.has-images {
+        background: #ef4444;
+        transform: scale(1.15);
+    }
+    /* Fayl yuklash tugmasi bloklanganda */
+    .upload-label.disabled {
+        opacity: 0.45;
+        pointer-events: none;
+        cursor: not-allowed;
+        filter: grayscale(0.5);
+    }</style>
 </head>
 <body>
 
@@ -224,33 +276,33 @@
                     <h3><i class="fas fa-plus-circle"></i> <span data-i18n="test-heading">Yangi test materiallarini yuklash</span></h3>
 
                     <div class="subject-grid">
-                        <div class="subject-card" onclick="selectSubject('Matematika', this)">
+                        <div class="subject-card" onclick="selectSubject('Matematika', this)" data-subject-key="Matematika">
                             <i class="fas fa-calculator"></i>
                             <span data-i18n="subj-matematika">Matematika</span>
                         </div>
-                        <div class="subject-card" onclick="selectSubject('Fizika', this)">
+                        <div class="subject-card" onclick="selectSubject('Fizika', this)" data-subject-key="Fizika">
                             <i class="fas fa-atom"></i>
                             <span data-i18n="subj-fizika">Fizika</span>
                         </div>
-                        <div class="subject-card" onclick="selectSubject('Ona tili', this)">
+                        <div class="subject-card" onclick="selectSubject('Ona tili', this)" data-subject-key="Ona tili">
                             <i class="fas fa-pen-nib"></i>
                             <span data-i18n="subj-ona-tili">Ona tili</span>
                         </div>
-                        <div class="subject-card" onclick="selectSubject('Ingliz tili', this)">
+                        <div class="subject-card" onclick="selectSubject('Ingliz tili', this)" data-subject-key="Ingliz tili">
                             <i class="fas fa-language"></i>
                             <span data-i18n="subj-ingliz-tili">Ingliz tili</span>
                         </div>
-                        <div class="subject-card" onclick="selectSubject('Geografiya', this)">
+                        <div class="subject-card" onclick="selectSubject('Geografiya', this)" data-subject-key="Geografiya">
                             <i class="fas fa-globe-asia"></i>
                             <span data-i18n="subj-geografiya">Geografiya</span>
                         </div>
 
-                        <div class="subject-card" onclick="selectSubject('Tarix', this)">
+                        <div class="subject-card" onclick="selectSubject('Tarix', this)" data-subject-key="Tarix">
                             <i class="fas fa-landmark"></i>
                             <span data-i18n="subj-tarix">Tarix</span>
                         </div>
 
-                        <div class="subject-card" onclick="selectSubject('Rus tili', this)">
+                        <div class="subject-card" onclick="selectSubject('Rus tili', this)" data-subject-key="Rus tili">
                             <i class="fas fa-font">Я</i> <span data-i18n="subj-rus-tili">Rus tili</span>
                         </div>
                     </div>
@@ -266,11 +318,17 @@
                                 <div class="class-row" data-grade="9">
                                     <span>9-<span data-i18n="test-grade-label">sinf uchun test:</span></span>
                                     <div class="upload-controls">
-                                        <label class="upload-label">
-                                            <input type="file" name="file_9" onchange="handleFileUpload(this, 'file-name-9')" hidden>
+                                        <label class="upload-label" id="file-label-9" title="Fayl yuklash">
+                                            <input type="file" name="file_9" onchange="handleFileUpload(this, 'file-name-9', 'file-label-9')" hidden>
                                             <i class="fas fa-cloud-upload-alt"></i> <span data-i18n="btn-choose-file">Fayl tanlash</span>
                                         </label>
                                         <span id="file-name-9" class="file-status" data-i18n="file-not-selected">Fayl tanlanmagan</span>
+                                        <label class="img-icon-btn" title="Rasmlarni yuklash" data-grade="9">
+                                            <input type="file" name="images_9" multiple accept="image/*" onchange="handleImagesUpload(this, 'img-badge-9')" hidden>
+                                            <i class="fas fa-image"></i>
+                                            <span id="img-badge-9" class="img-count-badge">0</span>
+                                        </label>
+                                        <button type="button" class="delete-file-btn img-list-btn" onclick="openImagesModal(9)" title="Yuklangan rasmlarni ko'rish"><i class="fas fa-images"></i></button>
                                         <button type="button" class="delete-file-btn" onclick="removeFile('file-name-9', this)"><i class="fas fa-trash"></i></button>
                                     </div>
                                 </div>
@@ -278,11 +336,17 @@
                                 <div class="class-row" data-grade="10">
                                     <span>10-<span data-i18n="test-grade-label">sinf uchun test:</span></span>
                                     <div class="upload-controls">
-                                        <label class="upload-label">
-                                            <input type="file" name="file_10" onchange="handleFileUpload(this, 'file-name-10')" hidden>
+                                        <label class="upload-label" id="file-label-10" title="Fayl yuklash">
+                                            <input type="file" name="file_10" onchange="handleFileUpload(this, 'file-name-10', 'file-label-10')" hidden>
                                             <i class="fas fa-cloud-upload-alt"></i> <span data-i18n="btn-choose-file">Fayl tanlash</span>
                                         </label>
                                         <span id="file-name-10" class="file-status" data-i18n="file-not-selected">Fayl tanlanmagan</span>
+                                        <label class="img-icon-btn" title="Rasmlarni yuklash" data-grade="10">
+                                            <input type="file" name="images_10" multiple accept="image/*" onchange="handleImagesUpload(this, 'img-badge-10')" hidden>
+                                            <i class="fas fa-image"></i>
+                                            <span id="img-badge-10" class="img-count-badge">0</span>
+                                        </label>
+                                        <button type="button" class="delete-file-btn img-list-btn" onclick="openImagesModal(10)" title="Yuklangan rasmlarni ko'rish"><i class="fas fa-images"></i></button>
                                         <button type="button" class="delete-file-btn" onclick="removeFile('file-name-10', this)"><i class="fas fa-trash"></i></button>
                                     </div>
                                 </div>
@@ -290,11 +354,17 @@
                                 <div class="class-row" data-grade="11">
                                     <span>11-<span data-i18n="test-grade-label">sinf uchun test:</span></span>
                                     <div class="upload-controls">
-                                        <label class="upload-label">
-                                            <input type="file" name="file_11" onchange="handleFileUpload(this, 'file-name-11')" hidden>
+                                        <label class="upload-label" id="file-label-11" title="Fayl yuklash">
+                                            <input type="file" name="file_11" onchange="handleFileUpload(this, 'file-name-11', 'file-label-11')" hidden>
                                             <i class="fas fa-cloud-upload-alt"></i> <span data-i18n="btn-choose-file">Fayl tanlash</span>
                                         </label>
                                         <span id="file-name-11" class="file-status" data-i18n="file-not-selected">Fayl tanlanmagan</span>
+                                        <label class="img-icon-btn" title="Rasmlarni yuklash" data-grade="11">
+                                            <input type="file" name="images_11" multiple accept="image/*" onchange="handleImagesUpload(this, 'img-badge-11')" hidden>
+                                            <i class="fas fa-image"></i>
+                                            <span id="img-badge-11" class="img-count-badge">0</span>
+                                        </label>
+                                        <button type="button" class="delete-file-btn img-list-btn" onclick="openImagesModal(11)" title="Yuklangan rasmlarni ko'rish"><i class="fas fa-images"></i></button>
                                         <button type="button" class="delete-file-btn" onclick="removeFile('file-name-11', this)"><i class="fas fa-trash"></i></button>
                                     </div>
                                 </div>
@@ -720,7 +790,6 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-    <script src="{% static 'js/admin.js' %}"></script>
 
 
 <!-- ===== EDIT STUDENT MODAL ===== -->
@@ -843,5 +912,8 @@
     </div>
 </div>
 
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{% static 'js/admin.js' %}"></script>
 </body>
 </html>

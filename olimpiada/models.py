@@ -82,9 +82,30 @@ class SystemSettings(models.Model):
         return "Tizim sozlamalari"
 
 
+from django.db import models
+from django.utils import timezone
 
 
+class UserSession(models.Model):
+    """Foydalanuvchining faol seanslarini saqlash — Telegram uslubida"""
+    student = models.ForeignKey('Student', on_delete=models.CASCADE,
+                                related_name='user_sessions')
+    session_key = models.CharField(max_length=64, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    device = models.CharField(max_length=30, default='Kompyuter')  # Kompyuter / Telefon / Planshet
+    browser = models.CharField(max_length=30, default='Boshqa')  # Chrome / Firefox / Safari ...
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    last_activity = models.DateTimeField(default=timezone.now)
 
+    class Meta:
+        ordering = ['-last_activity']
+        verbose_name = 'Foydalanuvchi seansi'
+        verbose_name_plural = 'Foydalanuvchi seanslari'
+
+    def __str__(self):
+        return f"{self.student} — {self.device} ({self.browser})"
 
 
 

@@ -4,11 +4,12 @@ import string
 import random
 import secrets
 import xlwt
+import requests as http_requests
 from django.http import HttpResponse
 import pandas as pd
 from django.conf import settings
 from django.http import JsonResponse
-from .models import TestMaterial, TestResult, Student
+from .models import TestMaterial, TestResult, Student, UserSession
 from django.shortcuts import get_object_or_404
 from django.core.mail import send_mail
 from datetime import datetime, timedelta
@@ -29,7 +30,57 @@ from django.contrib import messages
 
 #===========================================================================================================
 def index(request):
-    return render(request, 'html/index.html', {})
+    # --- 1. STATISTIKA ---
+    total_students = Student.objects.count()
+    total_winners  = TestResult.objects.filter(score_percent__gte=85).count()
+
+    # Nechta turli fan mavjud (TestMaterial orqali)
+    subjects_qs = TestMaterial.objects.values_list('subject', flat=True).distinct()
+    total_subjects = subjects_qs.count()
+
+    # --- 2. HAFTALIK TOP-5 REYTING (score_percent bo'yicha) ---
+    top_results = (
+        TestResult.objects
+        .order_by('-score_percent', '-correct_count')[:5]
+    )
+
+    # Avatar ranglari uchun
+    AVATAR_COLORS = ['av1', 'av2', 'av3', 'av4', 'av5']
+    PLACE_BADGES  = [
+        ('🥇 Birinchi', 'bg'),
+        ('🥈 Ikkinchi', 'bs'),
+        ('🥉 Uchinchi', 'bb'),
+        ('Top 5', 'bn'),
+        ('Top 5', 'bn'),
+    ]
+
+    rating_list = []
+    for i, r in enumerate(top_results):
+        initials = (r.first_name[:1] + r.last_name[:1]).upper()
+        badge_text, badge_cls = PLACE_BADGES[i] if i < len(PLACE_BADGES) else ('Top', 'bn')
+        rating_list.append({
+            'rank'       : i + 1,
+            'initials'   : initials,
+            'full_name'  : f"{r.first_name} {r.last_name}",
+            'subject'    : r.subject,
+            'score'      : int(r.score_percent),
+            'av_cls'     : AVATAR_COLORS[i],
+            'badge_text' : badge_text,
+            'badge_cls'  : badge_cls,
+            'is_first'   : i == 0,
+        })
+
+    # --- 3. KEYINGI OLIMPIADA SANASI (SystemSettings dan) ---
+    settings_obj = SystemSettings.objects.first()
+
+    context = {
+        'total_students' : total_students,
+        'total_subjects' : total_subjects,
+        'total_winners'  : total_winners,
+        'rating_list'    : rating_list,
+        'settings'       : settings_obj,
+    }
+    return render(request, 'html/index.html', context)
 #===========================================================================================================
 
 #===========================================================================================================
@@ -168,6 +219,21 @@ def student_login(request):
 
             # 3. Agar hammasi joyida bo'lsa, sessiyaga saqlaymiz
             request.session['student_id'] = student.id
+            # Faol seansni yozamiz
+            ua      = request.META.get('HTTP_USER_AGENT', '')
+            ip      = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', ''))
+            if ',' in ip:
+                ip = ip.split(',')[0].strip()
+            device  = _parse_device(ua)
+            browser = _parse_browser(ua)
+            UserSession.objects.create(
+                student    = student,
+                session_key= request.session.session_key or '',
+                ip_address = ip,
+                user_agent = ua,
+                device     = device,
+                browser    = browser,
+            )
             messages.success(request, f"Xush kelibsiz, {student.first_name}!")
             return redirect('student_dashboard')
         else:
@@ -176,7 +242,147 @@ def student_login(request):
             return redirect('student_login')
 
     return render(request, 'html/login.html')
-#=============================================================================================================
+
+#==============================================================================================================
+# GOOGLE OAUTH2 LOGIN — O'z implementation (allauth ishlatilmaydi)
+#==============================================================================================================
+import urllib.parse
+
+def _get_google_creds():
+    from django.conf import settings as django_settings
+    client_id     = getattr(django_settings, 'GOOGLE_CLIENT_ID', '')
+    client_secret = getattr(django_settings, 'GOOGLE_CLIENT_SECRET', '')
+    return client_id, client_secret
+
+
+
+def google_login_redirect(request):
+    """Foydalanuvchini Google sahifasiga yo'naltiradi"""
+    client_id, _ = _get_google_creds()
+    next_page = request.GET.get('next', 'student')  # 'admin' yoki 'student'
+
+    if not client_id:
+        messages.error(request, "Google login sozlanmagan! GOOGLE_CLIENT_ID settings.py da yo'q.")
+        return redirect('admin_login' if next_page == 'admin' else 'student_login')
+
+    redirect_uri = request.build_absolute_uri('/auth/google/callback/')
+
+    params = urllib.parse.urlencode({
+        'client_id'    : client_id,
+        'redirect_uri' : redirect_uri,
+        'response_type': 'code',
+        'scope'        : 'openid email profile',
+        'access_type'  : 'offline',
+        'prompt'       : 'select_account',
+        'state'        : next_page,  # 'admin' yoki 'student' — callback da aniqlanadi
+    })
+
+    google_auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{params}"
+    return redirect(google_auth_url)
+
+def google_login_callback(request):
+    """Google callback — email bazada borligini tekshiradi"""
+    code  = request.GET.get('code')
+    error = request.GET.get('error')
+    state = request.GET.get('state', 'student')  # 'admin' yoki 'student'
+    is_admin_login = (state == 'admin')
+
+    if error or not code:
+        messages.error(request, f"Google orqali kirishda xato: {error or 'code yoq'}")
+        return redirect('admin_login' if is_admin_login else 'student_login')
+
+    client_id, client_secret = _get_google_creds()
+    redirect_uri = request.build_absolute_uri('/auth/google/callback/')
+
+    # 1. Code -> Access token almashtirish
+    try:
+        token_resp = http_requests.post(
+            'https://oauth2.googleapis.com/token',
+            data={
+                'code'         : code,
+                'client_id'    : client_id,
+                'client_secret': client_secret,
+                'redirect_uri' : redirect_uri,
+                'grant_type'   : 'authorization_code',
+            },
+            timeout=10
+        )
+        token_data = token_resp.json()
+    except Exception as e:
+        messages.error(request, f"Token olishda xato: {e}")
+        return redirect('admin_login' if is_admin_login else 'student_login')
+
+    access_token = token_data.get('access_token')
+    if not access_token:
+        error_desc = token_data.get('error_description', token_data.get('error', "Noma'lum xato"))
+        messages.error(request, f"Google token xatosi: {error_desc}")
+        return redirect('admin_login' if is_admin_login else 'student_login')
+
+    # 2. Access token -> foydalanuvchi ma'lumotlari
+    try:
+        userinfo_resp = http_requests.get(
+            'https://www.googleapis.com/oauth2/v3/userinfo',
+            headers={'Authorization': f'Bearer {access_token}'},
+            timeout=10
+        )
+        userinfo = userinfo_resp.json()
+    except Exception as e:
+        messages.error(request, f"Foydalanuvchi ma'lumotlarini olishda xato: {e}")
+        return redirect('admin_login' if is_admin_login else 'student_login')
+
+    google_email = userinfo.get('email', '').lower().strip()
+    if not google_email:
+        messages.error(request, "Google emailni ololmadik. Iltimos qaytadan urinib ko'ring.")
+        return redirect('admin_login' if is_admin_login else 'student_login')
+
+    # ===== ADMIN LOGIN =====
+    if is_admin_login:
+        from django.contrib.auth.models import User
+        try:
+            user = User.objects.get(email__iexact=google_email)
+        except User.DoesNotExist:
+            messages.error(request, f"{google_email} — bu email admin sifatida ruxsat etilmagan.")
+            return redirect('admin_login')
+
+        if not (user.is_superuser or user.is_staff):
+            messages.error(request, "Bu hisob admin huquqiga ega emas!")
+            return redirect('admin_login')
+
+        auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        return redirect('admin_dashboard')
+
+    # ===== STUDENT LOGIN =====
+    # 3. Bazadan email orqali o'quvchini qidirish
+    student = Student.objects.filter(email__iexact=google_email).first()
+
+    if not student:
+        messages.error(
+            request,
+            f"{google_email} — bu email tizimda ro'yxatdan o'tmagan. Admin bilan bog'laning."
+        )
+        return redirect('student_login')
+
+    if not student.is_active:
+        messages.error(request, "Sizning hisobingiz bloklangan!")
+        return redirect('student_login')
+
+    # 4. Muvaffaqiyatli kirish
+    request.session['student_id'] = student.id
+    # Faol seansni yozamiz
+    ua      = request.META.get('HTTP_USER_AGENT', '')
+    ip      = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', ''))
+    if ',' in ip:
+        ip = ip.split(',')[0].strip()
+    UserSession.objects.create(
+        student    = student,
+        session_key= request.session.session_key or '',
+        ip_address = ip,
+        user_agent = ua,
+        device     = _parse_device(ua),
+        browser    = _parse_browser(ua),
+    )
+    messages.success(request, f"Xush kelibsiz, {student.first_name}!")
+    return redirect('student_dashboard')
 
 #=============================================================================================================
 def add_student(request):
@@ -457,7 +663,6 @@ def get_test_questions(request, test_id):
     test_material = get_object_or_404(TestMaterial, id=test_id)
     is_review = request.GET.get('review') == 'true'
 
-    # 1. Agar tahlil rejimi bo'lsa va sessiyada savollar bo'lsa, o'shani qaytaramiz
     if is_review and 'active_test_questions' in request.session:
         return JsonResponse({
             'status': 'success',
@@ -465,55 +670,140 @@ def get_test_questions(request, test_id):
         })
 
     try:
-        df = pd.read_excel(test_material.file.path)
+        df = pd.read_excel(test_material.file.path, engine='openpyxl')
+        columns = list(df.columns)
+
+        # To'g'ri javob ustunini aniqlash (moslashuvchan)
+        correct_col = None
+        for col in columns:
+            col_s = str(col).lower().strip()
+            if col_s.startswith('a (') or col_s == 'a' or "tog'ri" in col_s or 'togri' in col_s or "to'g'ri" in col_s:
+                correct_col = col
+                break
+        if correct_col is None and len(columns) >= 2:
+            correct_col = columns[1]
+
+        # Savol ustunini aniqlash
+        savol_col = None
+        for col in columns:
+            col_s = str(col).lower().strip()
+            if 'savol' in col_s or 'question' in col_s:
+                savol_col = col
+                break
+        if savol_col is None:
+            savol_col = columns[0]
+
+        # B, C, D ustunlarini aniqlash
+        b_col = next((c for c in columns if str(c).strip().upper() == 'B'), None)
+        c_col = next((c for c in columns if str(c).strip().upper() == 'C'), None)
+        d_col = next((c for c in columns if str(c).strip().upper() == 'D'), None)
+        if b_col is None and len(columns) > 2: b_col = columns[2]
+        if c_col is None and len(columns) > 3: c_col = columns[3]
+        if d_col is None and len(columns) > 4: d_col = columns[4]
+
+        if not correct_col or not savol_col:
+            return JsonResponse({
+                'status': 'error',
+                'message': "Excel ustun nomlari noto'g'ri. Mavjud ustunlar: " + str(columns)
+            }, status=500)
+
+        def clean_cell(val):
+            s = str(val).strip()
+            if s.startswith("='") or s.startswith('="'):
+                s = s[2:].rstrip("'\"")
+            elif s.startswith('='):
+                s = s[1:]
+            if s.lower() in ('nan', 'none', ''):
+                return ''
+            return s
+
+        from .models import SystemSettings
+        settings_obj = SystemSettings.objects.filter(id=1).first()
+        questions_limit = settings_obj.total_questions if settings_obj else 25
+
         all_questions_pool = []
 
-        # BAZADAN SAVOLLAR SONINI OLAMIZ
-        from .models import SystemSettings
-        settings = SystemSettings.objects.filter(id=1).first()
-        # Agar settings bo'lmasa, standart 25 ta savol olsin
-        questions_limit = settings.total_questions if settings else 25
-
         for index, row in df.iterrows():
-            correct_answer = str(row['A (To‘g‘ri)']).strip()
-            options = [
-                correct_answer,
-                str(row['B']).strip(),
-                str(row['C']).strip(),
-                str(row['D']).strip()
-            ]
-            # Har bir savol uchun variantlarni aralashtiramiz
+            correct_answer = clean_cell(row[correct_col]).strip()
+            if not correct_answer:
+                continue
+
+            options = [correct_answer]
+            if b_col: options.append(clean_cell(row[b_col]))
+            if c_col: options.append(clean_cell(row[c_col]))
+            if d_col: options.append(str(row[d_col]).strip())
+            options = [o for o in options if o and o.lower() not in ('nan', 'none')]
             random.shuffle(options)
 
+            # --- RASM BILAN ISHLASH ---
+            image_url = None
+            rasm_col = next((c for c in columns if str(c).lower().strip() == 'rasm'), None)
+            if rasm_col and pd.notna(row[rasm_col]):
+                img_name = str(row[rasm_col]).strip()
+                if img_name and img_name.lower() not in ('none', 'nan', ''):
+                    # Har fan va sinf uchun alohida papka: test_images/<subject>/<grade>/
+                    img_subject = test_material.subject
+                    img_grade   = str(test_material.grade)
+                    images_dir  = os.path.join(settings.MEDIA_ROOT, 'test_images', img_subject, img_grade)
+                    url_prefix  = settings.MEDIA_URL + 'test_images/' + img_subject + '/' + img_grade + '/'
+                    if os.path.isfile(os.path.join(images_dir, img_name)):
+                        image_url = url_prefix + img_name
+                    else:
+                        found = False
+                        for ext in ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'):
+                            candidate = img_name + ext
+                            if os.path.isfile(os.path.join(images_dir, candidate)):
+                                image_url = url_prefix + candidate
+                                found = True
+                                break
+                        if not found and os.path.isdir(images_dir):
+                            img_lower = img_name.lower()
+                            for fname in os.listdir(images_dir):
+                                if fname.lower() == img_lower or \
+                                        fname.lower() == img_lower + '.png' or \
+                                        fname.lower() == img_lower + '.jpg':
+                                    image_url = url_prefix + fname
+                                    break
+
             all_questions_pool.append({
-                'text': str(row['Savol']).strip(),
+                'text'   : clean_cell(row[savol_col]),
                 'options': options,
-                'correct': correct_answer
+                'correct': correct_answer,
+                'image'  : image_url,
             })
 
-        # 25 ta tasodifiy savolni tanlaymiz
+        if not all_questions_pool:
+            return JsonResponse({
+                'status': 'error',
+                'message': "Ushbu fan bo'yicha savollar topilmadi. Ustunlar: " + str(columns)
+            }, status=500)
+
         random.shuffle(all_questions_pool)
         selected_questions = all_questions_pool[:questions_limit]
 
         for i, q in enumerate(selected_questions):
             q['id'] = i + 1
 
-        # 2. MUHIM: Tanlangan va aralashtirilgan savollarni sessiyaga saqlaymiz
         request.session['active_test_questions'] = selected_questions
         request.session.modified = True
 
         return JsonResponse({'status': 'success', 'questions': selected_questions})
 
     except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
-#===================================================================================================================
-
+        try:
+            col_info = str(list(pd.read_excel(test_material.file.path, engine='openpyxl', nrows=0).columns))
+        except Exception:
+            col_info = 'N/A'
+        return JsonResponse({
+            'status': 'error',
+            'message': "Xato: " + str(e) + " | Ustunlar: " + col_info
+        }, status=500)
 #======================================================================================================================
 def upload_test(request):
     if request.method == 'POST':
         subject = request.POST.get('subject_name')
         for grade in [9, 10, 11]:
+            # Excel faylini saqlash
             file_key = f'file_{grade}'
             file = request.FILES.get(file_key)
             if file:
@@ -522,17 +812,78 @@ def upload_test(request):
                     grade=grade,
                     defaults={'file': file}
                 )
-        return redirect(reverse('admin_dashboard') + '?section=test')
+            # Rasmlarni media/test_images/<subject>/<grade>/ papkaga saqlash
+            images = request.FILES.getlist(f'images_{grade}')
+            if images:
+                save_dir = os.path.join(settings.MEDIA_ROOT, 'test_images', subject, str(grade))
+                os.makedirs(save_dir, exist_ok=True)
+                for img in images:
+                    dest_path = os.path.join(save_dir, img.name)
+                    with open(dest_path, 'wb+') as dest_file:
+                        for chunk in img.chunks():
+                            dest_file.write(chunk)
+
+        return redirect(reverse('admin_dashboard') + f'?section=test&subject={subject}')
 
     all_materials = TestMaterial.objects.all()
     status_dict = {}
     for item in all_materials:
-
         status_dict[f"{item.subject}_{item.grade}"] = True
 
     json_status = json.dumps(status_dict)
-
     return render(request, 'html/admin.html', {'json_status': json_status})
+
+#================================================================================================================
+
+#================================================================================================================
+def list_test_images(request):
+    """media/test_images/<subject>/<grade>/ papkasidagi rasmlar royxatini qaytaradi"""
+    subject = request.GET.get('subject', '').strip()
+    grade   = request.GET.get('grade', '').strip()
+
+    if not subject or not grade:
+        return JsonResponse({'status': 'error', 'message': 'subject va grade parametrlari kerak'}, status=400)
+
+    images_dir = os.path.join(settings.MEDIA_ROOT, 'test_images', subject, grade)
+    os.makedirs(images_dir, exist_ok=True)
+    files = []
+    for fname in sorted(os.listdir(images_dir)):
+        if fname.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg')):
+            files.append({
+                'name': fname,
+                'url': settings.MEDIA_URL + 'test_images/' + subject + '/' + grade + '/' + fname,
+            })
+    return JsonResponse({'status': 'success', 'images': files, 'count': len(files)})
+
+#================================================================================================================
+
+#================================================================================================================
+def delete_test_image(request):
+    """Bitta test rasmini o'chirish (subject/grade papkasidan)"""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Faqat POST'}, status=405)
+    try:
+        data = json.loads(request.body)
+    except Exception:
+        return JsonResponse({'status': 'error', 'message': 'JSON xatosi'}, status=400)
+
+    fname   = data.get('filename', '').strip()
+    subject = data.get('subject', '').strip()
+    grade   = data.get('grade', '').strip()
+
+    if not fname or not subject or not grade:
+        return JsonResponse({'status': 'error', 'message': 'filename, subject, grade kerak'}, status=400)
+    # Path traversal himoyasi
+    for val in (fname, subject, grade):
+        if '..' in val or '/' in val or '\\' in val:
+            return JsonResponse({'status': 'error', 'message': "Noto'g'ri parametrlar"}, status=400)
+
+    images_dir = os.path.join(settings.MEDIA_ROOT, 'test_images', subject, grade)
+    fpath = os.path.join(images_dir, fname)
+    if os.path.isfile(fpath):
+        os.remove(fpath)
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error', 'message': 'Fayl topilmadi'}, status=404)
 
 #================================================================================================================
 
@@ -662,6 +1013,7 @@ def export_results_excel(request, subject, grade):
 
     return response
 #==============================================================================================================
+#============================================================================================================
 
 #==============================================================================================================
 def change_admin_password(request):
@@ -1198,4 +1550,101 @@ def generate_certificate(request, result_id):
     response['Content-Disposition'] = f'attachment; filename="{safe_name}"'
     return response
 
-#======================================================================================================================
+# ================================================================
+# QURILMA VA BRAUZER ANIQLOVCHI YORDAMCHILAR
+# ================================================================
+def _parse_device(ua):
+    ua = ua.lower()
+    if any(x in ua for x in ('iphone','android','mobile','ipad','tablet')):
+        if 'ipad' in ua or 'tablet' in ua:
+            return 'Planshet'
+        return 'Telefon'
+    return 'Kompyuter'
+
+def _parse_browser(ua):
+    ua_lower = ua.lower()
+    if 'edg/' in ua_lower or 'edge/' in ua_lower:
+        return 'Edge'
+    if 'opr/' in ua_lower or 'opera' in ua_lower:
+        return 'Opera'
+    if 'chrome' in ua_lower:
+        return 'Chrome'
+    if 'firefox' in ua_lower:
+        return 'Firefox'
+    if 'safari' in ua_lower:
+        return 'Safari'
+    return 'Boshqa'
+
+# ================================================================
+# FAOL SEANSLAR API
+# ================================================================
+def get_active_sessions(request):
+    """Joriy foydalanuvchining barcha faol seanslarini qaytaradi"""
+    student_id = request.session.get('student_id')
+    if not student_id:
+        return JsonResponse({'status': 'error', 'message': 'Kirish talab etiladi'}, status=401)
+
+    current_key = request.session.session_key
+    sessions = UserSession.objects.filter(
+        student_id=student_id, is_active=True
+    ).order_by('-last_activity')
+
+    data = []
+    for s in sessions:
+        data.append({
+            'id'           : s.id,
+            'device'       : s.device,
+            'browser'      : s.browser,
+            'ip_address'   : s.ip_address,
+            'created_at'   : s.created_at.strftime('%d.%m.%Y %H:%M'),
+            'last_activity': s.last_activity.strftime('%d.%m.%Y %H:%M'),
+            'is_current'   : (s.session_key == current_key),
+        })
+
+    return JsonResponse({'status': 'success', 'sessions': data})
+
+
+def terminate_session(request):
+    """Bitta seansni tugatish"""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error'}, status=405)
+
+    student_id = request.session.get('student_id')
+    if not student_id:
+        return JsonResponse({'status': 'error', 'message': 'Kirish talab etiladi'}, status=401)
+
+    try:
+        data       = json.loads(request.body)
+        session_id = data.get('session_id')
+    except Exception:
+        return JsonResponse({'status': 'error', 'message': 'JSON xatosi'}, status=400)
+
+    sess = UserSession.objects.filter(id=session_id, student_id=student_id).first()
+    if not sess:
+        return JsonResponse({'status': 'error', 'message': 'Seans topilmadi'}, status=404)
+
+    # Agar joriy seans bo'lsa — chiqarib yuboramiz
+    if sess.session_key == request.session.session_key:
+        request.session.flush()
+
+    sess.is_active = False
+    sess.save()
+    return JsonResponse({'status': 'success'})
+
+
+def terminate_all_sessions(request):
+    """Joriy seansdan tashqari hammasini tugatish"""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error'}, status=405)
+
+    student_id = request.session.get('student_id')
+    if not student_id:
+        return JsonResponse({'status': 'error', 'message': 'Kirish talab etiladi'}, status=401)
+
+    current_key = request.session.session_key
+    UserSession.objects.filter(
+        student_id=student_id,
+        is_active=True
+    ).exclude(session_key=current_key).update(is_active=False)
+
+    return JsonResponse({'status': 'success'})

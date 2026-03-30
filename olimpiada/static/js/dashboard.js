@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
+
+    // Tab holati endi URL ?tab= orqali boshqariladi
+    // dashboard.html <head> da early script ishga tushiradi — bu yerda hech narsa kerak emas
 });
 
 
@@ -300,7 +303,18 @@ function loadTab(tabName) {
     });
     if (matched) matched.classList.add('active');
 
-    // 4. Mobileda sidebar yopilsin
+    // 4. URL ga ?tab= parametr qo'shish — replaceState (sakrash yo'q)
+    try {
+        var url = new URL(window.location.href);
+        if (tabName === 'home') {
+            url.searchParams.delete('tab');
+        } else {
+            url.searchParams.set('tab', tabName);
+        }
+        window.history.replaceState({ tab: tabName }, '', url.toString());
+    } catch(e) {}
+
+    // 5. Mobileda sidebar yopilsin
     dClose(); /* Har doim yopilsin */
 
     // Grafik sahifaga o'tilganda chartni resize qilish
@@ -358,7 +372,10 @@ function startTest(testId, duration, subject) {
 
                 // 2. Update modal title
                 const modalTitle = document.getElementById('modalSubjectTitle');
-                if (modalTitle) modalTitle.innerText = subject;
+                if (modalTitle) {
+                    modalTitle.setAttribute('data-raw-subject', subject);
+                    modalTitle.innerText = translateSubject(subject);
+                }
 
                 // 3. Render screen and start timer
                 renderQuestion();
@@ -396,7 +413,10 @@ function startPracticeTest(testId, duration, subject) {
                 isReviewMode = false;
 
                 const modalTitle = document.getElementById('modalSubjectTitle');
-                if (modalTitle) modalTitle.innerText = subject;
+                if (modalTitle) {
+                    modalTitle.setAttribute('data-raw-subject', subject);
+                    modalTitle.innerText = translateSubject(subject);
+                }
 
                 renderQuestion();
                 startTimer(duration * 60);
@@ -444,74 +464,96 @@ async function reviewTest(testId, resultId) {
 // 5. MAIN RENDER FUNCTION (Universal)
 function renderQuestion() {
     if (allQuestions.length === 0) return;
-    const area = document.getElementById('questionArea');
-    const q = allQuestions[currentQuestion - 1];
+    const area    = document.getElementById('questionArea');
+    const navScroll = document.getElementById('navScroll');
+    const q       = allQuestions[currentQuestion - 1];
 
     // 1. Format data
     let rawUserAnswer = userAnswers[currentQuestion] || userAnswers[String(currentQuestion)];
     const userSelected = cleanText(rawUserAnswer);
     const correctAnswer = cleanText(q.correct);
-
-    // NEW: Detect unanswered questions (empty or undefined)
     const isSkipped = (userSelected === "" || userSelected === "undefined" || !userSelected);
 
-    // 2. NAVIGATION (number boxes at top)
-    let navHtml = `<div class="question-nav-container"><div class="question-nav-scroll">`;
-    for (let i = 1; i <= allQuestions.length; i++) {
-        let cls = (i === currentQuestion) ? 'active' : '';
-
-        if (isReviewMode) {
-            let uA = cleanText(userAnswers[i] || userAnswers[String(i)]);
-            let cA = cleanText(allQuestions[i-1].correct);
-
-            // If no answer was given at all
-            if (!uA || uA === "undefined" || uA === "") {
-                cls += " skipped-nav"; // For red background in CSS
+    // 2. NAV — ALOHIDA ELEMENTGA render (scroll saqlanadi)
+    if (navScroll) {
+        let navInner = '';
+        for (let i = 1; i <= allQuestions.length; i++) {
+            let cls = (i === currentQuestion) ? 'active' : '';
+            if (isReviewMode) {
+                let uA = cleanText(userAnswers[i] || userAnswers[String(i)]);
+                let cA = cleanText(allQuestions[i-1].correct);
+                if (!uA || uA === "undefined" || uA === "") {
+                    cls += " skipped-nav";
+                } else {
+                    cls += (uA === cA) ? " correct-nav" : " wrong-nav";
+                }
             } else {
-                // Assign class based on correct or wrong answer
-                cls += (uA === cA) ? " correct-nav" : " wrong-nav";
+                if (userAnswers[i] || userAnswers[String(i)]) cls += " answered";
             }
-        } else {
-            if (userAnswers[i] || userAnswers[String(i)]) cls += " answered";
+            navInner += `<div class="nav-box ${cls}" onclick="jumpToQuestion(${i});return false;">${i}</div>`;
         }
-        navHtml += `<div class="nav-box ${cls}" onclick="jumpToQuestion(${i});return false;">${i}</div>`;
-    }
-    navHtml += `</div></div>`;
+        navScroll.innerHTML = navInner;
 
-    // 3. DRAW OPTIONS
+        // Aktiv nav-box ni ko'rinadigan joyga scroll
+        requestAnimationFrame(function() {
+            var activeBox = navScroll.querySelector('.nav-box.active');
+            if (activeBox) {
+                activeBox.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'center' });
+            }
+        });
+    }
+
+    // 3. VARIANTLAR
     let optionsHtml = q.options.map(opt => {
         const currentOpt = cleanText(opt);
         let statusClass = "";
-
         if (isReviewMode) {
-            if (currentOpt === correctAnswer) {
-                statusClass = "correct-opt"; // Correct answer always green
-            }
-            else if (!isSkipped && currentOpt === userSelected) {
-                statusClass = "wrong-opt"; // Red only if wrong answer was selected
-            }
+            if (currentOpt === correctAnswer) statusClass = "correct-opt";
+            else if (!isSkipped && currentOpt === userSelected) statusClass = "wrong-opt";
         } else {
-            if (userSelected !== "" && currentOpt === userSelected) {
-                statusClass = "selected";
-            }
+            if (userSelected !== "" && currentOpt === userSelected) statusClass = "selected";
         }
-
-        return `
-            <div class="option-item ${statusClass}"
-                 onclick="${isReviewMode ? '' : `selectOption('${opt.replace(/'/g, "\\'")}')`}">
-                <span class="opt-circle"></span> ${opt}
-            </div>`;
+        return `<div class="option-item ${statusClass}"
+                     onclick="${isReviewMode ? '' : `selectOption('${opt.replace(/'/g, "\\'")}')`}">
+                    <span class="opt-circle"></span> ${opt}
+                </div>`;
     }).join('');
 
-    // NEW: Extra classes for question card
-    const tagClass = (isReviewMode && isSkipped) ? "q-tag skipped-tag" : "q-tag";
+    // 4. RASM
+    let imageHtml = '';
+    var imgSrc = q.image;
+    var hasImage = imgSrc &&
+                   String(imgSrc) !== 'null' &&
+                   String(imgSrc) !== 'None' &&
+                   String(imgSrc) !== 'undefined' &&
+                   String(imgSrc).trim() !== '';
+
+    if (hasImage) {
+        imageHtml = `
+            <div class="q-image-wrap" id="imgWrap_${currentQuestion}">
+                <div class="q-image-loading">
+                    <i class="fas fa-spinner fa-spin"></i> Rasm yuklanmoqda...
+                </div>
+                <img src="${imgSrc}"
+                     class="q-image"
+                     alt="Savol rasmi"
+                     onclick="toggleImgZoom(this)"
+                     onload="this.previousElementSibling.style.display='none'; this.style.display='block';"
+                     onerror="document.getElementById('imgWrap_${currentQuestion}').innerHTML='<p class=q-image-err><i class=\'fas fa-image\'></i> Rasm yuklanmadi: ${imgSrc}</p>'"
+                     style="display:none">
+                <p class="q-image-hint"><i class="fas fa-expand-alt"></i> Kattalashtirish uchun bosing</p>
+            </div>`;
+    }
+
+    // 5. SAVOL KARTASI RENDER
+    const tagClass  = (isReviewMode && isSkipped) ? "q-tag skipped-tag" : "q-tag";
     const gridClass = (isReviewMode && isSkipped) ? "options-grid skipped-grid" : "options-grid";
 
     area.innerHTML = `
-        ${navHtml}
         <div class="question-card">
-            <span class="${tagClass}">Question ${currentQuestion} ${isSkipped && isReviewMode ? `<small>(${t('js-not-answered')})</small>` : ''}</span>
+            <span class="${tagClass}">Question ${currentQuestion}${isSkipped && isReviewMode ? ` <small>(${t('js-not-answered')})</small>` : ''}</span>
             <p class="q-text">${q.text}</p>
+            ${imageHtml}
             <div class="${gridClass}">${optionsHtml}</div>
         </div>`;
 
@@ -525,21 +567,54 @@ function selectOption(val) {
     renderQuestion();
 }
 
+
+/* Rasm zoom — test container ICHIDA overlay */
+function toggleImgZoom(img) {
+    var isZoomed = img.classList.contains('q-image-zoom');
+
+    // Avval barcha zoom va overlaylarni yopamiz
+    document.querySelectorAll('.q-image-zoom').forEach(function(el) {
+        el.classList.remove('q-image-zoom');
+    });
+    var existingOverlay = document.getElementById('imgZoomOverlay');
+    if (existingOverlay) existingOverlay.remove();
+
+    if (isZoomed) return; // Agar ochiq bo'lsa — yopamiz
+
+    // Zoom qilamiz
+    img.classList.add('q-image-zoom');
+
+    // Overlay — test container ichiga (body emas!)
+    var container = document.querySelector('.test-container');
+    if (!container) container = document.body;
+
+    var overlay = document.createElement('div');
+    overlay.id = 'imgZoomOverlay';
+    overlay.style.cssText = [
+        'position:absolute',
+        'inset:0',
+        'background:rgba(0,0,0,0.65)',
+        'backdrop-filter:blur(3px)',
+        '-webkit-backdrop-filter:blur(3px)',
+        'z-index:100',   /* test-container ichida */
+        'cursor:zoom-out',
+        'border-radius:inherit'
+    ].join(';');
+
+    overlay.onclick = function() {
+        img.classList.remove('q-image-zoom');
+        overlay.remove();
+    };
+    container.appendChild(overlay);
+}
+
 function jumpToQuestion(n) {
     currentQuestion = n;
+    // Avval savol render
     renderQuestion();
-    // Savol mazmuniga scroll (tepaga emas)
+    // Savol mazmuni tepaga — NAV emas, faqat savol qismi
     var area = document.getElementById('questionArea');
-    if (area) {
-        area.scrollTop = 0;
-        // Test container scroll ham tepaga — savol ko'rinsin
-        var container = document.querySelector('.test-container');
-        if (container) {
-            var contentEl = container.querySelector('.test-content');
-            if (contentEl) contentEl.scrollTop = 0;
-        }
-    }
-    // Window scroll bloklash (test modal ochiq)
+    if (area) area.scrollTop = 0;
     return false;
 }
 
@@ -548,6 +623,8 @@ function changeQuestion(step) {
     if (newQ >= 1 && newQ <= allQuestions.length) {
         currentQuestion = newQ;
         renderQuestion();
+        var testContent = document.querySelector('.test-content');
+        if (testContent) testContent.scrollTop = 0;
     }
 }
 
@@ -570,7 +647,9 @@ function updateFooter() {
 
     // Progress bar and indicator
     const answeredCount = Object.keys(userAnswers).length;
-    document.getElementById('questionIndicator').innerHTML = `${t("js-question")} ${currentQuestion} / ${allQuestions.length} <br> <small style="color: #10b981;">${t("js-answered")}: ${answeredCount}</small>`;
+    document.getElementById('questionIndicator').innerHTML =
+        `<span style="font-size:12px;font-weight:700;">${t("js-question")} ${currentQuestion}/${allQuestions.length}</span>` +
+        `<br><span style="font-size:10px;color:#10b981;font-weight:600;">${t("js-answered")}: ${answeredCount}</span>`;
     document.getElementById('progressBar').style.width = (currentQuestion / allQuestions.length) * 100 + '%';
 }
 
@@ -1166,9 +1245,12 @@ document.addEventListener('DOMContentLoaded', function() {
    DARK MODE — works without F5
    ===================================================== */
 (function() {
+    // Dark modeni DOMContentLoaded kutmay darhol qo'llaymiz (flicker oldini olish)
     if (localStorage.getItem('darkMode') === 'enabled') {
+        document.documentElement.classList.add('dark-mode');
         document.addEventListener('DOMContentLoaded', function() {
             document.body.classList.add('dark-mode');
+            document.documentElement.classList.remove('dark-mode');
             const toggle = document.getElementById('darkModeToggle');
             if (toggle) toggle.checked = true;
             fixInlineBackgrounds(true);
@@ -1307,6 +1389,12 @@ function applySubjectTranslations(lang) {
         const original = el.getAttribute('data-subject-name');
         el.textContent = dict[original] || original;
     });
+    // Modal ochiq bo'lsa, uning sarlavhasini ham yangilaymiz
+    const modalTitle = document.getElementById('modalSubjectTitle');
+    if (modalTitle) {
+        const raw = modalTitle.getAttribute('data-raw-subject');
+        if (raw) modalTitle.innerText = dict[raw] || raw;
+    }
 }
 
 /* =====================================================
@@ -1934,4 +2022,152 @@ function downloadAllCertificates() {
     }
 
     downloadNext();
+}
+/* ================================================================
+   FAOL SEANSLAR — yuklash, ko'rsatish, tugatish
+   ================================================================ */
+
+// Settings tabiga o'tilganda seanslarni yuklash
+(function patchLoadTab() {
+    var _orig = window.loadTab;
+    if (typeof _orig === 'function') {
+        window.loadTab = function(tab) {
+            _orig(tab);
+            if (tab === 'settings') loadActiveSessions();
+        };
+    } else {
+        // loadTab hali aniqlanmagan bo'lsa — DOMContentLoaded da ulaymiz
+        document.addEventListener('DOMContentLoaded', function() {
+            var orig2 = window.loadTab;
+            if (typeof orig2 === 'function') {
+                window.loadTab = function(tab) {
+                    orig2(tab);
+                    if (tab === 'settings') loadActiveSessions();
+                };
+            }
+            // Agar settings tab aktiv bo'lsa darhol yuklaymiz
+            var params = new URLSearchParams(window.location.search);
+            if (params.get('tab') === 'settings') loadActiveSessions();
+        });
+    }
+})();
+
+async function loadActiveSessions() {
+    var container = document.getElementById('sessionsContainer');
+    if (!container) return;
+    container.innerHTML = '<div class="sessions-loading"><i class="fas fa-spinner fa-spin"></i></div>';
+
+    try {
+        var resp = await fetch('/sessions/');
+        var data = await resp.json();
+        if (data.status !== 'success') throw new Error(data.message);
+        renderSessions(data.sessions);
+    } catch(e) {
+        container.innerHTML = '<div class="sessions-empty"><i class="fas fa-exclamation-circle"></i><p>Seanslarni yuklab bo\'lmadi</p></div>';
+    }
+}
+
+function renderSessions(sessions) {
+    var container = document.getElementById('sessionsContainer');
+    if (!container) return;
+
+    if (!sessions.length) {
+        container.innerHTML = '<div class="sessions-empty"><i class="fas fa-shield-alt" style="font-size:32px;opacity:.3"></i><p>Faol seanslar yo\'q</p></div>';
+        return;
+    }
+
+    var html = '';
+    sessions.forEach(function(s) {
+        var iconClass = 'desktop';
+        var iconName  = 'fa-desktop';
+        if (s.device === 'Telefon')  { iconClass = 'phone';  iconName = 'fa-mobile-alt'; }
+        if (s.device === 'Planshet') { iconClass = 'tablet'; iconName = 'fa-tablet-alt'; }
+
+        var currentBadge = s.is_current
+            ? '<span class="session-current-badge">Joriy seans</span>'
+            : '';
+
+        var terminateBtn = s.is_current
+            ? '<button class="session-terminate-btn" disabled title="Joriy seans"><i class="fas fa-lock"></i></button>'
+            : '<button class="session-terminate-btn" onclick="terminateSession(' + s.id + ', this)" title="Seansni tugatish"><i class="fas fa-times"></i></button>';
+
+        html += '<div class="session-item" id="session-' + s.id + '">' +
+            '<div class="session-icon ' + iconClass + '"><i class="fas ' + iconName + '"></i></div>' +
+            '<div class="session-info">' +
+                '<div class="session-name">' + s.browser + ' &mdash; ' + s.device + currentBadge + '</div>' +
+                '<div class="session-meta">' +
+                    '<span><i class="fas fa-map-marker-alt" style="margin-right:3px;opacity:.6"></i>' + s.ip_address + '</span>' +
+                    '<span><i class="fas fa-clock" style="margin-right:3px;opacity:.6"></i>' + s.last_activity + '</span>' +
+                '</div>' +
+            '</div>' +
+            terminateBtn +
+        '</div>';
+    });
+
+    container.innerHTML = html;
+}
+
+async function terminateSession(sessionId, btn) {
+    if (!confirm('Bu seansni tugatmoqchimisiz?')) return;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    try {
+        var resp = await fetch('/sessions/terminate/', {
+            method : 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken' : getCSRFToken()
+            },
+            body: JSON.stringify({ session_id: sessionId })
+        });
+        var data = await resp.json();
+        if (data.status === 'success') {
+            var row = document.getElementById('session-' + sessionId);
+            if (row) {
+                row.style.opacity    = '0';
+                row.style.transition = '0.3s';
+                setTimeout(function() { row.remove(); }, 300);
+            }
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-times"></i>';
+            alert(data.message || 'Xatolik yuz berdi');
+        }
+    } catch(e) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-times"></i>';
+    }
+}
+
+async function terminateAllSessions() {
+    if (!confirm('Joriy seansdan tashqari barchasini tugatmoqchimisiz?')) return;
+
+    try {
+        var resp = await fetch('/sessions/terminate-all/', {
+            method : 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken' : getCSRFToken()
+            },
+            body: JSON.stringify({})
+        });
+        var data = await resp.json();
+        if (data.status === 'success') {
+            loadActiveSessions();
+        }
+    } catch(e) {
+        alert('Xatolik yuz berdi');
+    }
+}
+
+function getCSRFToken() {
+    var name = 'csrftoken';
+    var cookies = document.cookie.split(';');
+    for (var i = 0; i < cookies.length; i++) {
+        var c = cookies[i].trim();
+        if (c.startsWith(name + '=')) return decodeURIComponent(c.slice(name.length + 1));
+    }
+    var el = document.querySelector('[name=csrfmiddlewaretoken]');
+    return el ? el.value : '';
 }
